@@ -309,11 +309,11 @@ else
 fi
 if [ $1 -eq 3 ] || [ $1 -eq 4 ]
 then
-  port=("${portForwards[@]}")
+  portForwards=("${portForwards[@]}")
 else
-  port=()
+  portForwards=()
 fi
-menuOptions=("${linux[@]}" "${windows[@]}" "${port[@]}")
+menuOptions=("${linux[@]}" "${windows[@]}" "${portForwards[@]}")
 OPTION=$($menuCom \
 --clear --title "Azure Server List" \
 --menu "Choose which server you want to connect to?" 20 60 12 \
