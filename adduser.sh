@@ -1,0 +1,2 @@
+#!/usr/bash
+useradd -m 
