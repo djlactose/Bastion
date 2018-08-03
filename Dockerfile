@@ -20,6 +20,8 @@ cat /root/admin_pass.txt | passwd admin --stdin && \
 chage -d 0 admin
 
 COPY ./sshd_config /etc/ssh/sshd_config
+COPY ./upgrade.sh /home/bastion/
+COPY ./adduser.sh /home/bastion/
 
 VOLUME /home
 
