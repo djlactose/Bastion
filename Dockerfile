@@ -10,6 +10,9 @@ mv /home/bastion/Bastion/servers.conf /home/bastion/ && \
 mv /home/bastion/Bastion/servers.sh /home/bastion/ && \
 mv /home/bastion/Bastion/install_bastion.sh /home/bastion/ && \
 rm -rf /home/bastion/Bastion && \
+chmod 755 /home/bastion/servers.conf && \
+chmod 755 /home/bastion/servers.sh && \
+chmod 755 /home/bastion/install_bastion.sh && \
 ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa && \
 ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa && \
 ssh-keygen -f /etc/ssh/ssh_host_ecdsa_key -N '' -t ecdsa && \
