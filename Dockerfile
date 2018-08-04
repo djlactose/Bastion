@@ -2,26 +2,26 @@
 FROM centos
 EXPOSE 22
 
+COPY ./sshd_config /etc/ssh/sshd_config
+COPY ./upgrade.sh /root
+COPY ./adduser.sh /root
+COPY servers.sh /root
+COPY servers.conf /root
+COPY install_bastion.sh /root
+
 RUN mkdir /home/bastion && \
-yum install openssh-server git -y && \
-cd /home/bastion && \
-git clone https://github.com/djlactose/Bastion.git && \
-mv /home/bastion/Bastion/servers.conf /home/bastion/ && \
-mv /home/bastion/Bastion/servers.sh /home/bastion/ && \
-mv /home/bastion/Bastion/install_bastion.sh /home/bastion/ && \
-rm -rf /home/bastion/Bastion && \
+yum install openssh-server -y && \
+chmod 755 /root/servers.conf && \
+chmod 755 /root/servers.sh && \
+chmod 755 /root/install_bastion.sh && \
+ln -P /root/servers.conf /home/bastion/servers.conf && \
+ln -P /root/servers.sh /home/bastion/servers.sh && \
+ln -P /root/install_bastion.sh /home/bastion/install_bastion.sh && \
 ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa && \
 ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa && \
 ssh-keygen -f /etc/ssh/ssh_host_ecdsa_key -N '' -t ecdsa && \
-ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N '' -t ed25519 && \
-useradd -d /home/bastion admin && \
-echo $(head /dev/urandom | tr -dc A-Za-z0-9|head -c 13;echo '') > /root/admin_pass.txt && \
-cat /root/admin_pass.txt | passwd admin --stdin && \
-chage -d 0 admin
-
-COPY ./sshd_config /etc/ssh/sshd_config
-COPY ./upgrade.sh /home/bastion/
-COPY ./adduser.sh /home/bastion/
+ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N '' -t ed25519  && \
+usermod -d /root root
 
 VOLUME /home
 
