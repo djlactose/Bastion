@@ -1,4 +1,3 @@
-#!/bin/bash
 ####################################################
 #Settings
 ####################################################
@@ -309,11 +308,11 @@ else
 fi
 if [ $1 -eq 3 ] || [ $1 -eq 4 ]
 then
-  portForwards=("${portForwards[@]}")
+  other=("${otherMachines[@]}")
 else
-  portForwards=()
+  other=()
 fi
-menuOptions=("${linux[@]}" "${windows[@]}" "${portForwards[@]}")
+menuOptions=("${linux[@]}" "${windows[@]}" "${other[@]}")
 OPTION=$($menuCom \
 --clear --title "Azure Server List" \
 --menu "Choose which server you want to connect to?" 20 60 12 \
@@ -358,7 +357,6 @@ done
 ###################################################
 ###################################################
 
-checkConfig
 checkConfUpdate
 depCheck
 exitstatus=0
@@ -385,6 +383,7 @@ while [  $exitstatus -eq 0 ]; do
     then
       exitstatus=1
     fi
+    osChoice=5
   else
     exitstatus=0
     continue
