@@ -10,7 +10,8 @@ COPY servers.conf /root
 COPY install_bastion.sh /root
 
 RUN mkdir /home/bastion && \
-yum install openssh-server -y && \
+yum install sudo epel-release openssh-server -y && \
+yum install google-authenticator -y && \
 chmod 755 /root/servers.conf && \
 chmod 755 /root/servers.sh && \
 chmod 755 /root/install_bastion.sh && \
