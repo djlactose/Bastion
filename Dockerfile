@@ -8,6 +8,7 @@ COPY ./adduser.sh /root
 COPY servers.sh /root
 COPY servers.conf /root
 COPY install_bastion.sh /root
+COPY run.sh /root
 
 RUN mkdir /home/bastion && \
 yum install openssh-server -y && \
@@ -20,6 +21,7 @@ ln -P /root/install_bastion.sh /home/bastion/install_bastion.sh && \
 chmod 755 /home/bastion/servers.conf && \
 chmod 755 /home/bastion/servers.sh && \
 chmod 755 /home/bastion/install_bastion.sh && \
+chmod 755 /root/run.sh && \
 ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa && \
 ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa && \
 ssh-keygen -f /etc/ssh/ssh_host_ecdsa_key -N '' -t ecdsa && \
@@ -29,4 +31,4 @@ VOLUME /home
 
 WORKDIR /root
 
-ENTRYPOINT ["/usr/sbin/sshd","-D"]
+ENTRYPOINT /root/run.sh
