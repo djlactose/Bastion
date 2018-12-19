@@ -2,9 +2,10 @@
 FROM centos
 EXPOSE 22
 
-COPY ./sshd_config /etc/ssh/sshd_config
-COPY ./upgrade.sh /root
-COPY ./adduser.sh /root
+COPY sshd_config /etc/ssh/sshd_config
+COPY sshd /etc/pam.d/sshd
+COPY upgrade.sh /root
+COPY adduser.sh /root
 COPY servers.sh /root
 COPY servers.conf /root
 COPY install_bastion.sh /root
