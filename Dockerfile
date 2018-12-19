@@ -5,25 +5,18 @@ EXPOSE 22
 
 COPY sshd_config /etc/ssh/sshd_config
 COPY sshd /etc/pam.d/sshd
-COPY upgrade.sh /root
-COPY adduser.sh /root
-COPY servers.sh /root
-COPY servers.conf /root
-COPY install_bastion.sh /root
-COPY run.sh /root
+COPY upgrade.sh /root/bin
+COPY adduser.sh /root/bin
+COPY servers.sh /root/bastion
+COPY servers.conf /root/bastion
+COPY install_bastion.sh /root/bin
+COPY run.sh /root/bin
 
-RUN mkdir /root/bastion && \
-yum install sudo epel-release openssh-server -y && \
+RUN yum install sudo epel-release openssh-server -y && \
 yum install google-authenticator -y && \
-chmod 755 /root/servers.conf && \
-chmod 755 /root/servers.sh && \
-chmod 755 /root/install_bastion.sh && \
-ln -P /root/servers.conf /home/bastion/servers.conf && \
-ln -P /root/servers.sh /home/bastion/servers.sh && \
-ln -P /root/install_bastion.sh /home/bastion/install_bastion.sh && \
-chmod 755 /root/bastion/servers.conf && \
-chmod 755 /root/bastion/servers.sh && \
-chmod 755 /root/bastion/install_bastion.sh && \
+chmod 755 /root/bastion/ -R && \
+chmod 755 /root/bin/install_bastion.sh && \
+chmod 755 /root/bin/adduser.sh && \
 chmod 755 /root/run.sh && \
 ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa && \
 ssh-keygen -f /etc/ssh/ssh_host_dsa_key -N '' -t dsa && \
