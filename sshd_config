@@ -82,8 +82,8 @@ PasswordAuthentication yes
 #PasswordAuthentication no
 
 # Change to no to disable s/key passwords
-#ChallengeResponseAuthentication yes
-ChallengeResponseAuthentication no
+ChallengeResponseAuthentication yes
+#ChallengeResponseAuthentication no
 
 # Kerberos options
 #KerberosAuthentication no
