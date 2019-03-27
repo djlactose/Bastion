@@ -1,3 +1,3 @@
-#!/usr/bin/bash
+#!/bin/bash
 ls /home | xargs -I xxx useradd -d /home/xxx xxx
-RestoreUsers.sh
+/root/bin/RestoreUsers.sh
