@@ -3,3 +3,4 @@
 \cp -P /etc/gshadow /root/bastion/
 \cp -P /etc/group /root/bastion/
 \cp -Pr /var/spool/mail /root/bastion/
+\cp -Pr /home /root/bastion/
