@@ -11,5 +11,6 @@ else
   cp /etc/ssh/ssh_host_dsa_key /root/bastion
   cp /etc/ssh/ssh_host_ecdsa_key /root/bastion
   cp /etc/ssh/ssh_host_ed25519_key /root/bastion
+  cp /root/bin/servers.sh /etc/bastion/
 fi
 /usr/sbin/sshd -f /etc/ssh/sshd_config -D
