@@ -17,7 +17,8 @@ COPY run.sh /root/bin/run.sh
 RUN yum install sudo epel-release openssh-server -y && \
 yum install google-authenticator -y && \
 yum clean all && \
-chmod 777 /root/bastion/* -R && \
+mkdir /root/bastion && \
+chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/install_bastion.sh && \
 chmod 755 /root/bin/adduser.sh && \
 chmod 755 /root/bin/run.sh && \
