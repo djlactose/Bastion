@@ -14,7 +14,7 @@ COPY servers.conf /etc/bastion/servers.conf
 COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
 
-RUN yum install sudo epel-release openssh-server -y && \
+RUN yum install sudo epel-release openssh-clients openssh-server -y && \
 yum install google-authenticator -y && \
 yum clean all && \
 mkdir /root/bastion && \
