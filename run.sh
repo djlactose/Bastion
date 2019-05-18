@@ -14,5 +14,4 @@ else
   cp /root/bin/servers.sh /etc/bastion/
 fi
 echo "nameserver $dns" > /etc/resolv.conf
-hostname -b $hostname
 /usr/sbin/sshd -f /etc/ssh/sshd_config -D

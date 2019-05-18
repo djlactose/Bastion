@@ -3,7 +3,6 @@ FROM centos
 
 EXPOSE 22
 
-ENV hostname bastion
 ENV dns 9.9.9.9
 
 COPY sshd_config /etc/ssh/sshd_config
