@@ -6,3 +6,6 @@ To keep all generated accounts you need to create the two following volumes:
 * /home
 * /root/bastion
 * /etc/bastion
+
+##Environmental Vars
+* dns - this is the DNS server you want the host to user.  If left blank it will use "9.9.9.9".

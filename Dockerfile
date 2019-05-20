@@ -3,6 +3,8 @@ FROM centos
 
 EXPOSE 22
 
+ENV dns 9.9.9.9
+
 COPY sshd_config /etc/ssh/sshd_config
 COPY sshd /etc/pam.d/sshd
 COPY RestoreUsers.sh /root/bin/RestoreUsers.sh

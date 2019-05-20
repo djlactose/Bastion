@@ -274,7 +274,7 @@ else
   osMenu=("1" "Windows" "2" "Linux" "3" "Other" "4" "All" "5" "CLI")
 fi
   osChoice=$($menuCom \
---clear --title "Azure Server List" \
+--clear --title "$Name Server List" \
 --menu "Choose the server type:" 15 30 5 \
 ${osMenu[@]} \
 2>&1 > /dev/tty)
@@ -314,7 +314,7 @@ else
 fi
 menuOptions=("${linux[@]}" "${windows[@]}" "${other[@]}")
 OPTION=$($menuCom \
---clear --title "Azure Server List" \
+--clear --title "$Name Server List" \
 --menu "Choose which server you want to connect to?" 20 60 12 \
 "${menuOptions[@]}" \
 2>&1 > /dev/tty)
