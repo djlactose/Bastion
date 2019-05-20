@@ -186,6 +186,16 @@ doConnection(){
     M) #Conenct to Bastion Host
       ssh $bastion  
     ;;
+    X) #Connection to allow deploying the websites to the webservers.
+      #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
+      if [ $multiCon -eq 0 ]
+      then
+        ssh $bastion -tD 5222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "top && exit"
+      else
+        nohup ssh $bastion -ND 5222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
+        echo $! > .$(echo $port)-servers.pid
+      fi
+    ;;
     Z) #Wazuh Web Admin Connection
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
@@ -291,6 +301,7 @@ showMenu(){
 #P = Publish using MSDeploy
 #W = Windows
 #S = SQL Server
+#X = SOCKS Proxy on port 5222
 #Z = Wazuh Port
 
 #Based on first menu choice show server list.
