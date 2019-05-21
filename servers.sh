@@ -186,7 +186,7 @@ doConnection(){
     M) #Conenct to Bastion Host
       ssh $bastion  
     ;;
-    X) #Connection to allow deploying the websites to the webservers.
+    X) #iSets up a socks connection on port 5222 
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
