@@ -1,0 +1,28 @@
+#!/bin/bash
+############################################
+#Bastion Server Address
+bastion=""
+############################################
+#Name for bastion host to be displayed in menu
+Name=""
+############################################
+#Connection Table
+#D = Portainer Port
+#H = Website Ports
+#J - Java Web Ports
+#L = Linux
+#M - Bastion Host
+#N = Nesus Port
+#P = Publish using MSDeploy
+#W = Windows
+#S = SQL Server
+#X = SOCKS Proxy on port 5222
+#Z = Wazuh Port
+############################################
+#Windows Machines List
+windowsMachines=("192.168.0.1_W" "Sample1 RDP Connection" "192.168.0.2_W" "Sample2 RDP Connection")
+#Linux Machines List
+linuxMachines=("127.0.0.1_M" "Bastion Host" "192.168.0.3_L" "Sample1 SSH Connection")
+#Port Forward Machines List
+otherMachines=("192.168.0.4_S" "MS SQL DB Connection")
+############################################
