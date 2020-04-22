@@ -4,7 +4,14 @@
 ownPid=$$
 upPath="~/servers.sh"
 upConfPath="~/servers.conf"
-exe="/mnt/c/Windows/System32/mstsc.exe"
+if [ -f "/mnt/c/Windows/System32/mstsc.exe" ]
+then
+  exe="/mnt/c/Windows/System32/mstsc.exe"
+  flags="/v:"
+else
+  exe="rdesktop"
+  flags=""
+fi
 depRDP=0
 exitTerm=0
 multiCon=0
@@ -138,10 +145,12 @@ doConnection(){
       then
 	if [ $multiCon -eq 0 ]
 	then
+          echo "The IP address is $2"
+          echo ""
           echo "The port is $port"
-	  echo ""
+	        echo ""
           echo "Connection started at $(date)"
-          $exe /v:localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
+          $exe $flags localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
 	  count=1
 	  mCount=00
 	  hCount=00
@@ -168,7 +177,7 @@ doConnection(){
 	    fi
 	  done
 	else
-          $exe /v:localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
+          $exe $flags localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
 	fi
       else
         echo "Problem establishing connection to Bastion host"
