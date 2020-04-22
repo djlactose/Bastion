@@ -1,5 +1,5 @@
 #Docker Image to spin up a Bastion Server
-FROM centos
+FROM centos:7
 
 EXPOSE 22
 
