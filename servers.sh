@@ -26,18 +26,6 @@ menuCom="whiptail" #This value doesn't matter once depcheck runs to see what the
 #Functions
 ###################################################
 
-settingsFile=$(echo $0|rev|cut -c 4-|rev).conf
-if [ -f "$settingsFile" ]
-then
-  . $settingsFile
-else
-  echo "Enter in the server address of the bastion host:"
-  read bastion
-  echo \#Bastion Server Address >> $settingsFile
-  echo bastion=$bastion >> $settingsFile
-  exit
-fi
-
 checkAppUpdate(){
   #Download script from bastion host to tmp directory
   md5=`md5sum $0 |cut -d " " -f 1`
@@ -104,6 +92,20 @@ checkConfUpdate(){
     mv $confFile.tmp $confFile
   fi
 }
+
+settingsFile=$(echo $0|rev|cut -c 4-|rev).conf
+if [ -f "$settingsFile" ]
+then
+  . $settingsFile
+else
+  echo "Enter in the server address of the bastion host:"
+  read bastion
+  echo \#Bastion Server Address >> $settingsFile
+  echo bastion=$bastion >> $settingsFile
+  checkConfUpdate
+  checkAppUpdate
+  exit
+fi
 
 depCheck(){
   dep="Missing dependence:"
