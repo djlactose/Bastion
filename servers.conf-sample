@@ -1,10 +1,11 @@
 #!/bin/bash
 ############################################
-#Bastion Server Address
-bastion=""
+#Bastion Server Address 
+#NOTE: To load balance enter more than one host in quotes
+bastion=("")
 ############################################
 #Name for bastion host to be displayed in menu
-Name=""
+name=""
 ############################################
 #Connection Table
 #D = Portainer Port

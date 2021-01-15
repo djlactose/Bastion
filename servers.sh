@@ -10,13 +10,11 @@ then
   flags="/v:"
 else
   exe="rdesktop"
-  flags=""
+  flags="-n"
 fi
 depRDP=0
 exitTerm=0
 multiCon=0
-###################################################
-###################################################
 
 #This is used to attempt to generate a unique port number on each run that is high enough that this script can run without admin
 port=`expr $$ + 10000`
@@ -97,6 +95,7 @@ settingsFile=$(echo $0|rev|cut -c 4-|rev).conf
 if [ -f "$settingsFile" ]
 then
   . $settingsFile
+  bastion=${bastion[$RANDOM % ${#bastion[@]} ]} #Randomly select host if there is more than one
 else
   echo "Enter in the server address of the bastion host:"
   read bastion
@@ -295,7 +294,7 @@ else
   osMenu=("1" "Windows" "2" "Linux" "3" "Other" "4" "All" "5" "CLI")
 fi
   osChoice=$($menuCom \
---clear --title "$Name Server List" \
+--clear --title "$name Server List" \
 --menu "Choose the server type:" 15 30 5 \
 ${osMenu[@]} \
 2>&1 > /dev/tty)
