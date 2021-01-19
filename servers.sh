@@ -95,7 +95,14 @@ settingsFile=$(echo $0|rev|cut -c 4-|rev).conf
 if [ -f "$settingsFile" ]
 then
   . $settingsFile
-  bastion=${bastion[$RANDOM % ${#bastion[@]} ]} #Randomly select host if there is more than one
+    bastion=${bastion[$RANDOM % ${#bastion[@]} ]} #Randomly select host if there is more than one
+    basTest=`nc -q 0 -w 1 "$bastion" 22 < /dev/null`
+    while [ -z "$basTest" ]
+    do
+	echo "$bastion is down trying another random host from the list."
+	bastion=${bastion[$RANDOM % ${#bastion[@]} ]} #Randomly select host if there is more than one
+	basTest=`nc -q 0 -w 1 "$bastion" 22 < /dev/null`
+    done
 else
   echo "Enter in the server address of the bastion host:"
   read bastion
