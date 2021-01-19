@@ -97,11 +97,18 @@ then
   . $settingsFile
     bastion=${bastion[$RANDOM % ${#bastion[@]} ]} #Randomly select host if there is more than one
     basTest=`nc -q 0 -w 1 "$bastion" 22 < /dev/null`
+    count=0
     while [ -z "$basTest" ]
     do
 	echo "$bastion is down trying another random host from the list."
 	bastion=${bastion[$RANDOM % ${#bastion[@]} ]} #Randomly select host if there is more than one
 	basTest=`nc -q 0 -w 1 "$bastion" 22 < /dev/null`
+	((count++))
+	if [ $count -gt 5 ]
+	then
+		echo "Unable to connect to any of the hosts that were tried... Exiting"
+		exit
+	fi
     done
 else
   echo "Enter in the server address of the bastion host:"
