@@ -4,6 +4,11 @@
 #NOTE: To load balance enter more than one host in quotes
 bastion=("")
 ############################################
+############################################
+#Port to use for Bastion
+base_port=22
+############################################
+############################################
 #Name for bastion host to be displayed in menu
 name=""
 ############################################
