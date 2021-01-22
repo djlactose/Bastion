@@ -25,6 +25,8 @@ menuCom="whiptail" #This value doesn't matter once depcheck runs to see what the
 ###################################################
 
 checkAppUpdate(){
+  bastions=("${bastion[@]}")
+  bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   #Download script from bastion host to tmp directory
   md5=`md5sum $0 |cut -d " " -f 1`
   scp $bastion:$upPath /tmp/
@@ -58,6 +60,8 @@ checkAppUpdate(){
 }  
 
 checkConfUpdate(){
+  bastions=("${bastion[@]}")
+  bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   #Download config from bastion host to tmp directory
   confFile=$(echo $0|rev|cut -c 4-|rev).conf
   confmd5=`md5sum $confFile |cut -d " " -f 1`
