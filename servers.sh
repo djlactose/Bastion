@@ -115,7 +115,6 @@ then
 		exit
 	fi
     done
-    bastion="$bastion -P $base_port"
 else
   echo "Enter in the server address of the bastion host:"
   read bastion
@@ -159,6 +158,7 @@ depCheck(){
 }
 
 doConnection(){
+  bastion="$bastion -P $base_port"
   case $1 in
     W) #Windows Machines
       ssh $bastion -fL $port:$2:3389 sleep 30  #creates a ssh session forwarding the ports and has a sleep at the end after the person disconnects it automatically closes out the session
