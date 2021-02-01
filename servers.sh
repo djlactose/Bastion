@@ -29,7 +29,7 @@ checkAppUpdate(){
   bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   #Download script from bastion host to tmp directory
   md5=`md5sum $0 |cut -d " " -f 1`
-  scp $bastion:$upPath /tmp/
+  scp -P $base_port $bastion:$upPath /tmp/
   #has file
   if [ -f "/tmp/servers.sh" ]
   then
@@ -65,7 +65,7 @@ checkConfUpdate(){
   #Download config from bastion host to tmp directory
   confFile=$(echo $0|rev|cut -c 4-|rev).conf
   confmd5=`md5sum $confFile |cut -d " " -f 1`
-  scp $bastion:$upConfPath /tmp/
+  scp -P $base_port $bastion:$upConfPath /tmp/
   #has file
   if [ -f "/tmp/servers.conf" ]
   then

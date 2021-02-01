@@ -13,7 +13,7 @@ COPY upgrade.sh /root/bin/upgrade.sh
 COPY adduser.sh /root/bin/adduser.sh
 COPY servers.sh /root/bin/servers.sh
 COPY servers.conf-sample /etc/bastion/servers.conf
-COPY servers.conf-sample /root/bin/servers.conf
+COPY servers.conf-sample /root/bin/servers.conf-sample
 COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
 
