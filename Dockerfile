@@ -26,7 +26,7 @@ chmod 755 /root/bin/adduser.sh && \
 chmod 755 /root/bin/run.sh && \
 chmod 755 /root/bin/BackupUsers.sh && \
 chmod 755 /root/bin/RestoreUsers.sh && \
-chmod 744 /root/bin/servers.conf && \
+chmod 744 /root/bin/servers.conf-sample && \
 chmod 755 /root/bin/servers.sh
 
 VOLUME /home
