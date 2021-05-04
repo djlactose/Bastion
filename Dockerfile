@@ -5,6 +5,8 @@ EXPOSE 22
 
 ENV dns 9.9.9.9
 
+HEALTHCHECK CMD exit $(nc -q 0 -w 1 localhost 22|grep -c "SSH")
+
 COPY sshd_config /etc/ssh/sshd_config
 COPY sshd /etc/pam.d/sshd
 COPY RestoreUsers.sh /root/bin/RestoreUsers.sh
