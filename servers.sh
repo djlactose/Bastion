@@ -304,8 +304,15 @@ doConnection(){
         echo $! > .$(echo $port)-servers.pid
       fi
     ;;
-    *)
-      echo "Invalid Server Type"
+    *) #No canned code was given
+    #Attempting to use the code as the port number as both the local port number and the server port number.
+      if [ $multiCon -eq 0 ]
+      then
+        ssh $bastion -p $base_port -tL $1:$2:$1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo You are forwarding port \`tput setaf 2\` $1 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+      else
+        nohup ssh $bastion -p $base_port -NL $1:$2:$1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
+        echo $! > .$(echo $port)-servers.pid
+      fi
   esac
 }
 
