@@ -124,6 +124,9 @@ else
   read bastion
   echo \#Bastion Server Address >> $settingsFile
   echo bastion=$bastion >> $settingsFile
+  echo "Enter in the server port of the bastion host:"
+  read bastion_port
+  echo base_port=$bastion_port >> $settingsFile
   checkConfUpdate
   checkAppUpdate
   exit
