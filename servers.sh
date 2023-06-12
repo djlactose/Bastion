@@ -95,6 +95,11 @@ checkConfUpdate(){
   fi
 }
 
+cleanUp(){
+  ls -a |grep servers.pid | xargs -I XXX cat XXX|xargs -I xxx kill xxx
+  ls -a |grep servers.pid | xargs -I xxx rm xxx
+}
+
 settingsFile=$(echo $0|rev|cut -c 4-|rev).conf
 if [ -f "$settingsFile" ]
 then
@@ -170,47 +175,47 @@ doConnection(){
       ssh $bastion -p $base_port -fL $port:$2:3389 sleep 30  #creates a ssh session forwarding the ports and has a sleep at the end after the person disconnects it automatically closes out the session
       if [ $(ps -ef|grep -c "ssh $bastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ] #check to make sure the ssh session is started before continuing
       then
-	if [ $multiCon -eq 0 ]
-	then
-          echo "The Bastion server name is $name"
-          echo "Connected to $2"
-          echo ""
-          echo "The port is $port"
-	        echo ""
-          echo "Connection started at $(date)"
-          $exe $flags localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
-	  count=1
-	  mCount=00
-	  hCount=00
-	  dCount=00
-	  while [ $(ps -ef|grep -c "ssh $bastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ]
-	  do
-	    sleep 1
-	    printf "Conection established for $dCount days $hCount:$mCount:$count \r"
-	    count=`expr $count + 1`
-	    if [ $count -eq 60 ]
-	    then
-		mCount=`expr $mCount + 1`
-		count=0
-	    fi
-	    if [ $mCount -eq 60 ]
-	    then
-		hCount=`expr $hCount + 1`
-		mCount=0
-	    fi
-	    if [ $hCount -eq 24 ]
-	    then
-		dCount=`expr $dCount + 1`
-		hCount=0
-	    fi
-	  done
-	else
-          $exe $flags localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
-	fi
-      else
-        echo "Problem establishing connection to Bastion host"
-      fi
-    ;;
+        if [ $multiCon -eq 0 ]
+        then
+                echo "The Bastion server name is $name"
+                echo "Connected to $2"
+                echo ""
+                echo "The port is $port"
+                echo ""
+                echo "Connection started at $(date)"
+                $exe $flags localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
+          count=1
+          mCount=00
+          hCount=00
+          dCount=00
+          while [ $(ps -ef|grep -c "ssh $bastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ]
+          do
+            sleep 1
+            printf "Conection established for $dCount days $hCount:$mCount:$count \r"
+            count=`expr $count + 1`
+            if [ $count -eq 60 ]
+            then
+          mCount=`expr $mCount + 1`
+          count=0
+            fi
+            if [ $mCount -eq 60 ]
+            then
+          hCount=`expr $hCount + 1`
+          mCount=0
+            fi
+            if [ $hCount -eq 24 ]
+            then
+          dCount=`expr $dCount + 1`
+          hCount=0
+            fi
+          done
+        else
+                $exe $flags localhost:$port & #Starts Remote Desktop connection through the ssh session just created.
+        fi
+            else
+              echo "Problem establishing connection to Bastion host"
+            fi
+          ;;
     L) #Linux Machines
       ssh $bastion -p $base_port -fL $port:$2:22 sleep 10 
       if [ $(ps -ef|grep -c "ssh $bastion -p $base_port -fL $port:$2:22 sleep 10") -gt 1 ] #check to make sure the ssh session is started before continuing 
@@ -443,7 +448,7 @@ while [  $exitstatus -eq 0 ]; do
     exitstatus=0
     continue
   fi
-clear
+  clear
 done
 checkAppUpdate
 if [ $exitTerm = 1 ] || [ $multiCon = 1 ]
@@ -459,8 +464,9 @@ then
   done
   if [ $exitTerm = 1 ]
   then
+    cleanUp
     kill -9 $PPID
+  else
+    cleanUp
   fi
 fi
-ls -a |grep servers.pid | xargs -I XXX cat XXX|xargs -I xxx kill xxx
-ls -a |grep servers.pid | xargs -I xxx rm xxx
