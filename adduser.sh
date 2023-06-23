@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 read -p "Please enter the username: " user
 useradd -m $user
 ln -s /etc/bastion/servers.conf /home/$user/servers.conf

@@ -1,3 +1,4 @@
+#!/bin/bash
 \cp -P /etc/passwd /root/bastion/
 \cp -P /etc/shadow /root/bastion/
 \cp -P /etc/gshadow /root/bastion/

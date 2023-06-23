@@ -18,4 +18,4 @@ session    include      password-auth
 session    include      postlogin
 # Used with polkit to reauthorize users in remote sessions
 -session   optional     pam_reauthorize.so prepare
-auth required pam_google_authenticator.so
+auth required /lib/security/pam_google_authenticator.so echo_verification_code grace_period=57600
