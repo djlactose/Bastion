@@ -23,6 +23,7 @@ name=""
 #W = Windows
 #S = SQL Server
 #X = SOCKS Proxy on port 5222
+#Y = Shutdown WSL
 #Z = Wazuh Port
 ############################################
 #Windows Machines List

@@ -1,5 +1,5 @@
 #Docker Image to spin up a Bastion Server
-FROM alpine
+FROM centos:7
 
 EXPOSE 22
 
@@ -18,8 +18,9 @@ COPY servers.conf-sample /root/bin/servers.conf-sample
 COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
 
-RUN apk update && \
-apk add bash openssh openssh-server-pam google-authenticator openssh-doc ncurses google-authenticator-doc && \
+RUN yum install sudo epel-release openssh-clients openssh-server -y && \
+yum install google-authenticator -y && \
+yum clean all && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/install_bastion.sh && \

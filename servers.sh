@@ -313,6 +313,14 @@ doConnection(){
         echo $! > .$(echo $port)-servers.pid
       fi
     ;;
+    Y) #Shutdown WSL (Windows Sub-system for Linux) after it is shutdown it will come back up once it is attempted to be used again.
+      echo WARNING!!! This will close ALL linux sessions and disconnect anything connected through those connections.
+      read -p "Are you sure you want to continue? (y/N): " -i "n" wsl_cont
+      if [ $wsl_cont == "y" ]; then
+        echo "Shutting down WSL... please wait."
+        /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe 'wsl --shutdown'
+      fi
+    ;;
     *) #No canned code was given
     #Attempting to use the code as the port number as both the local port number and the server port number.
       if [ $multiCon -eq 0 ]
@@ -352,6 +360,7 @@ showMenu(){
 #W = Windows
 #S = SQL Server
 #X = SOCKS Proxy on port 5222
+#Y = Shutdown WSL
 #Z = Wazuh Port
 
 #Based on first menu choice show server list.
