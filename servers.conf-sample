@@ -22,6 +22,7 @@ name=""
 #P = Publish using MSDeploy
 #W = Windows
 #S = SQL Server
+#T = Sysadmin Toolbox
 #X = SOCKS Proxy on port 5222
 #Y = Shutdown WSL
 #Z = Wazuh Port

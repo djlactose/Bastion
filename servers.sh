@@ -313,6 +313,15 @@ doConnection(){
         echo $! > .$(echo $port)-servers.pid
       fi
     ;;
+    T) #System Administrator Toolbox
+    ssh $bastion -p $base_port -fL $port:$2:5222 sleep 10 
+    if [ $(ps -ef|grep -c "ssh $bastion -p $base_port -fL $port:$2:5222 sleep 10") -gt 1 ] #check to make sure the ssh session is started before continuing 
+    then
+      ssh localhost -p $port -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null #creates an ssh connection without requiring the host key since almost every connection is unique it would never have anything to compare it to
+    else
+      echo "Problem establishing connection to Bastion host"
+    fi
+    ;;
     Y) #Shutdown WSL (Windows Sub-system for Linux) after it is shutdown it will come back up once it is attempted to be used again.
       echo WARNING!!! This will close ALL linux sessions and disconnect anything connected through those connections.
       read -p "Are you sure you want to continue? (y/N): " -i "n" wsl_cont
@@ -359,6 +368,7 @@ showMenu(){
 #P = Publish using MSDeploy
 #W = Windows
 #S = SQL Server
+#T = Sysadmin Toolbox
 #X = SOCKS Proxy on port 5222
 #Y = Shutdown WSL
 #Z = Wazuh Port
