@@ -1,3 +1,4 @@
+#!/bin/bash
 ####################################################
 #Settings
 ####################################################
@@ -232,7 +233,7 @@ doConnection(){
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
-        ssh $bastion -p $base_port -tD 5222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the Proxy on \`tput setaf 2\` $bastion \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tD 5222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the Proxy on \`tput setaf 2\` $bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 5222 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -ND 5222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -242,7 +243,7 @@ doConnection(){
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
-        ssh $bastion -p $base_port -tL 5601:$2:5601 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL 5601:$2:5601 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 5601 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL 5601:$2:5601 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -253,7 +254,7 @@ doConnection(){
       if [ $multiCon -eq 0 ]
       then
         nohup ssh $bastion -p $base_port -NL 8080:$2:80 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
-        ssh $bastion -p $base_port -tL 8443:$2:443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL 8443:$2:443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8080 \`tput sgr0\` and \`tput setaf 2\` 8443 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL 8080:$2:80 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         nohup ssh $bastion -p $base_port -NL 8443:$2:443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
@@ -264,18 +265,18 @@ doConnection(){
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
-        ssh $bastion -p $base_port -tL 9000:$2:9000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL 9000:$2:9000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 9000 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL 9000:$2:9000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
       fi
     ;;
-    N) #Wazuh Web Admin Connection
+    N) #Nesus Web Admin Connection
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
         nohup ssh $bastion -p $base_port -NL 8834:$2:8834 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
-        ssh $bastion -p $base_port -tL 8000:$2:8000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL 8000:$2:8000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8000 \`tput sgr0\` and \`tput setaf 2\` 8834 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL 8834:$2:8834 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         nohup ssh $bastion -p $base_port -NL 8000:$2:8000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
@@ -286,7 +287,7 @@ doConnection(){
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
-        ssh $bastion -p $base_port -tL 8443:$2:8443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL 8443:$2:8443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8443 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL 8443:$2:8443 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -296,7 +297,7 @@ doConnection(){
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
-        ssh $bastion -p $base_port -tL 8172:$2:8172 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL 8172:$2:8172 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8172 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL 8172:$2:8172 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -306,17 +307,34 @@ doConnection(){
       #create the ssh session and keeps it open with a top command.  Without this there wouldn't be enough time to start the application
       if [ $multiCon -eq 0 ]
       then
-        ssh $bastion -p $base_port -tL 1433:$2:1433 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL 1433:$2:1433 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 1433 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL 1433:$2:1433 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
+      fi
+    ;;
+    T) #System Administrator Toolbox
+    ssh $bastion -p $base_port -fL $port:$2:5222 sleep 10 
+    if [ $(ps -ef|grep -c "ssh $bastion -p $base_port -fL $port:$2:5222 sleep 10") -gt 1 ] #check to make sure the ssh session is started before continuing 
+    then
+      ssh localhost -p $port -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null #creates an ssh connection without requiring the host key since almost every connection is unique it would never have anything to compare it to
+    else
+      echo "Problem establishing connection to Bastion host"
+    fi
+    ;;
+    Y) #Shutdown WSL (Windows Sub-system for Linux) after it is shutdown it will come back up once it is attempted to be used again.
+      echo WARNING!!! This will close ALL linux sessions and disconnect anything connected through those connections.
+      read -p "Are you sure you want to continue? (y/N): " -i "n" wsl_cont
+      if [ $wsl_cont == "y" ]; then
+        echo "Shutting down WSL... please wait."
+        /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe 'wsl --shutdown'
       fi
     ;;
     *) #No canned code was given
     #Attempting to use the code as the port number as both the local port number and the server port number.
       if [ $multiCon -eq 0 ]
       then
-        ssh $bastion -p $base_port -tL $1:$2:$1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo You are forwarding port \`tput setaf 2\` $1 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+        ssh $bastion -p $base_port -tL $1:$2:$1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` $1 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         nohup ssh $bastion -p $base_port -NL $1:$2:$1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -341,17 +359,19 @@ ${osMenu[@]} \
 
 showMenu(){
 #Generate menu
-#D = Portainer Port
-#H = Website Ports
-#J - Java Web Ports
+#D = Portainer Port - port 8172
+#H = Website Ports - ports 8080, 8443
+#J - Java Web Ports - ports 8443
 #L = Linux
 #M - Bastion Host
-#N = Nesus Port
-#P = Publish using MSDeploy
+#N = Nesus Port - ports 8834, 8000
+#P = Publish using MSDeploy - port 8172
 #W = Windows
-#S = SQL Server
-#X = SOCKS Proxy on port 5222
-#Z = Wazuh Port
+#S = SQL Server - port 1433
+#T = Sysadmin Toolbox
+#X = SOCKS Proxy - port 5222
+#Y = Shutdown WSL
+#Z = Wazuh Port - port 5601
 
 #Based on first menu choice show server list.
 if [ $1 -eq 1 ] || [ $1 -eq 4 ]
