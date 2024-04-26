@@ -2,6 +2,7 @@
 FROM centos:7
 
 EXPOSE 22
+EXPOSE 5000
 
 ENV dns 9.9.9.9
 
@@ -17,7 +18,7 @@ COPY servers.sh /root/bin/servers.sh
 COPY servers.conf-sample /root/bin/servers.conf-sample
 COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
-COPY index.html /root/web/templates/index.html
+COPY templates/index.html /root/web/templates/index.html
 COPY web.py /root/web/web.py
 
 RUN yum install sudo epel-release openssh-clients openssh-server python3 python3-pip -y && \

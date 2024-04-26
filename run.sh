@@ -16,4 +16,5 @@ else
   cp /root/bin/servers.conf-sample /etc/bastion/servers.conf
 fi
 echo "nameserver	$dns" >> /etc/resolv.conf
+python3 /root/web/web.py &
 /usr/sbin/sshd -f /etc/ssh/sshd_config -D -e
