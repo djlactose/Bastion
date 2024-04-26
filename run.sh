@@ -13,6 +13,7 @@ else
   cp /etc/ssh/ssh_host_ed25519_key /root/bastion
   cp /root/bin/servers.sh /etc/bastion/
   cp /root/bin/servers.conf-sample /etc/bastion/
+  cp /root/bin/servers.conf-sample /etc/bastion/servers.conf
 fi
 echo "nameserver	$dns" >> /etc/resolv.conf
 /usr/sbin/sshd -f /etc/ssh/sshd_config -D -e

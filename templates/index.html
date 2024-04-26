@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bastion Configuration</title>
+</head>
+<body>
+    <h1>Bastion Configuration</h1>
+    
+    <form action="/submit" method="post">
+        <label for="bastion">Bastion Server Address:</label>
+        <input type="text" id="bastion" name="bastion" value="{{ config_values.bastion }}"><br><br>
+
+        <label for="base_port">Base Port:</label>
+        <input type="text" id="base_port" name="base_port" value="{{ config_values.base_port }}"><br><br>
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" value="{{ config_values.name }}"><br><br>
+
+        <label for="windows_machines">Windows Machines:</label>
+        <textarea id="windows_machines" name="windows_machines" rows="4" cols="50">{{ config_values.windows_machines }}</textarea><br><br>
+
+        <label for="linux_machines">Linux Machines:</label>
+        <textarea id="linux_machines" name="linux_machines" rows="4" cols="50">{{ config_values.linux_machines }}</textarea><br><br>
+
+        <label for="other_machines">Other Machines:</label>
+        <textarea id="other_machines" name="other_machines" rows="4" cols="50">{{ config_values.other_machines }}</textarea><br><br>
+
+        <!-- Connection types key as a table -->
+        <table border="1">
+            <caption>Connection Types Key</caption>
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>D</td>
+                <td>Portainer Port - port 8172</td>
+            </tr>
+            <tr>
+                <td>H</td>
+                <td>Website Ports - ports 8080, 8443</td>
+            </tr>
+            <tr>
+                <td>J</td>
+                <td>Java Web Ports - ports 8443</td>
+            </tr>
+            <tr>
+                <td>L</td>
+                <td>Linux ssh - port 22</td>
+            </tr>
+            <tr>
+                <td>M</td>
+                <td>Bastion Host ssh - port from base_port</td>
+            </tr>
+            <tr>
+                <td>N</td>
+                <td>Nesus Port - ports 8834, 8000</td>
+            </tr>
+            <tr>
+                <td>P</td>
+                <td>Publish using MSDeploy - port 8172</td>
+            </tr>
+            <tr>
+                <td>W</td>
+                <td>Windows RDP - port 3389</td>
+            </tr>
+            <tr>
+                <td>S</td>
+                <td>SQL Server - port 1433</td>
+            </tr>
+            <tr>
+                <td>T</td>
+                <td>Sysadmin Toolbox</td>
+            </tr>
+            <tr>
+                <td>X</td>
+                <td>SOCKS Proxy - port 5222</td>
+            </tr>
+            <tr>
+                <td>Y</td>
+                <td>Shutdown WSL</td>
+            </tr>
+            <tr>
+                <td>Z</td>
+                <td>Wazuh Port - port 5601</td>
+            </tr>
+            <tr>
+                <td>#</td>
+                <td>Any number will forward that port</td>
+            </tr>
+        </table><br>
+
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

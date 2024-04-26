@@ -17,8 +17,10 @@ COPY servers.sh /root/bin/servers.sh
 COPY servers.conf-sample /root/bin/servers.conf-sample
 COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
+COPY index.html /root/web/templates/index.html
+COPY web.py /root/web/web.py
 
-RUN yum install sudo epel-release openssh-clients openssh-server -y && \
+RUN yum install sudo epel-release openssh-clients openssh-server python3 python3-pip -y && \
 yum install google-authenticator -y && \
 yum clean all && \
 mkdir /root/bastion && \
@@ -29,7 +31,8 @@ chmod 755 /root/bin/run.sh && \
 chmod 755 /root/bin/BackupUsers.sh && \
 chmod 755 /root/bin/RestoreUsers.sh && \
 chmod 744 /root/bin/servers.conf-sample && \
-chmod 755 /root/bin/servers.sh
+chmod 755 /root/bin/servers.sh && \
+pip3 install flask
 
 VOLUME /home
 VOLUME /root/bastion
