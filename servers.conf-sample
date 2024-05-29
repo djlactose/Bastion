@@ -12,20 +12,21 @@ base_port=22
 #Name for bastion host to be displayed in menu
 name=""
 ############################################
-#Connection Table
-#D = Portainer Port - port 8172
-#H = Website Ports - ports 8080, 8443
-#J - Java Web Ports - ports 8443
-#L = Linux
-#M - Bastion Host
-#N = Nesus Port - ports 8834, 8000
-#P = Publish using MSDeploy - port 8172
-#W = Windows
-#S = SQL Server - port 1433
-#T = Sysadmin Toolbox
-#X = SOCKS Proxy - port 5222
-#Y = Shutdown WSL
-#Z = Wazuh Port - port 5601
+# Connection Table
+# D = Portainer Port - port 8172
+# H = Website Ports - ports 8080, 8443
+# J - Java Web Ports - ports 8443
+# L = Linux ssh - port 22
+# M - Bastion Host ssh - port from base_port
+# N = Nesus Port - ports 8834, 8000
+# P = Publish using MSDeploy - port 8172
+# W = Windows RDP - port 3389
+# S = SQL Server - port 1433
+# T = Sysadmin Toolbox
+# X = SOCKS Proxy - port 5222
+# Y = Shutdown WSL
+# Z = Wazuh Port - port 5601
+# # = Any number will forward that port
 ############################################
 #Windows Machines List
 windowsMachines=("192.168.0.1_W" "Sample1 RDP Connection" "192.168.0.2_W" "Sample2 RDP Connection")
