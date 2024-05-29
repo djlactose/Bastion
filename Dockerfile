@@ -33,7 +33,8 @@ chmod 755 /root/bin/run.sh && \
 chmod 755 /root/bin/BackupUsers.sh && \
 chmod 755 /root/bin/RestoreUsers.sh && \
 chmod 644 /root/bin/servers.conf-sample && \
-chmod 755 /root/bin/servers.sh
+chmod 755 /root/bin/servers.sh && \
+mkdir -p -m0755 /var/run/sshd
 
 WORKDIR /root/bin
 
