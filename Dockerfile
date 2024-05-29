@@ -1,9 +1,13 @@
 #Docker Image to spin up a Bastion Server
-FROM centos:7
+FROM ubuntu
 
 EXPOSE 22
 
 ENV dns 9.9.9.9
+
+VOLUME /home
+VOLUME /root/bastion
+VOLUME /etc/bastion
 
 HEALTHCHECK CMD exit $(nc -q 0 -w 1 localhost 22|grep -c "SSH")
 
@@ -18,9 +22,8 @@ COPY servers.conf-sample /root/bin/servers.conf-sample
 COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
 
-RUN yum install sudo epel-release openssh-clients openssh-server -y && \
-yum install google-authenticator -y && \
-yum clean all && \
+RUN apt update && \
+apt install -y -o Dpkg::Options::="--force-confold" openssh-server libpam-google-authenticator sudo qrencode && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/install_bastion.sh && \
@@ -30,10 +33,6 @@ chmod 755 /root/bin/BackupUsers.sh && \
 chmod 755 /root/bin/RestoreUsers.sh && \
 chmod 644 /root/bin/servers.conf-sample && \
 chmod 755 /root/bin/servers.sh
-
-VOLUME /home
-VOLUME /root/bastion
-VOLUME /etc/bastion
 
 WORKDIR /root/bin
 
