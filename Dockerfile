@@ -24,7 +24,7 @@ COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
 
 RUN apt update && \
-apt install -y -o Dpkg::Options::="--force-confold" openssh-server libpam-google-authenticator sudo qrencode && \
+apt install -y -o Dpkg::Options::="--force-confold" openssh-server openssh-client libpam-google-authenticator sudo qrencode && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/install_bastion.sh && \
