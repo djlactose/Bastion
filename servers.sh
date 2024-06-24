@@ -26,6 +26,7 @@ menuCom="whiptail" #This value doesn't matter once depcheck runs to see what the
 ###################################################
 
 checkAppUpdate(){
+  echo "**********************"
   bastions=("${bastion[@]}")
   bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   #Download script from bastion host to tmp directory
@@ -58,9 +59,11 @@ checkAppUpdate(){
     rm $0
     mv $0.tmp $0
   fi
+  echo "**********************"
 }  
 
 checkConfUpdate(){
+  echo "**********************"
   bastions=("${bastion[@]}")
   bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   #Download config from bastion host to tmp directory
@@ -94,6 +97,7 @@ checkConfUpdate(){
     rm $confFile
     mv $confFile.tmp $confFile
   fi
+  echo "**********************"
 }
 
 cleanUp(){
