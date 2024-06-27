@@ -460,7 +460,6 @@ done
 ###################################################
 ###################################################
 
-checkConfUpdate
 depCheck
 exitstatus=0
 while [  $exitstatus -eq 0 ]; do
@@ -493,6 +492,7 @@ while [  $exitstatus -eq 0 ]; do
   fi
   clear
 done
+checkConfUpdate
 checkAppUpdate
 if [ $exitTerm = 1 ] || [ $multiCon = 1 ]
 then
