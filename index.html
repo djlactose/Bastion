@@ -62,7 +62,7 @@
             box-sizing: border-box;
         }
         .section-content select {
-            width: calc(100% - 22px);
+            width: 100%;
             padding: 12px;
             margin-bottom: 15px;
             border: 1px solid #ccc;
@@ -164,8 +164,19 @@
                         <div class="machine-entry">
                             <input type="text" name="windows_ip" value="{{ ip.split('_')[0] }}" placeholder="IP Address">
                             <select name="windows_type">
-                                <option value="W" {% if ip.split('_')[1] == 'W' %}selected{% endif %}>Windows RDP (3389)</option>
-                                <!-- Add other options as needed -->
+                                <option value="W" {{ 'selected' if ip.split('_')[1] == 'W' }}>Windows RDP - port 3389</option>
+                                <option value="D" {{ 'selected' if ip.split('_')[1] == 'D' }}>Portainer Port - port 9000</option>
+                                <option value="H" {{ 'selected' if ip.split('_')[1] == 'H' }}>Website Ports - ports 8080, 8443</option>
+                                <option value="J" {{ 'selected' if ip.split('_')[1] == 'J' }}>Java Web Ports - ports 8443</option>
+                                <option value="L" {{ 'selected' if ip.split('_')[1] == 'L' }}>Linux ssh - port 22</option>
+                                <option value="M" {{ 'selected' if ip.split('_')[1] == 'M' }}>Bastion Host ssh - port from base_port</option>
+                                <option value="N" {{ 'selected' if ip.split('_')[1] == 'N' }}>Nesus Port - ports 8834, 8000</option>
+                                <option value="P" {{ 'selected' if ip.split('_')[1] == 'P' }}>Publish using MSDeploy - port 8172</option>
+                                <option value="S" {{ 'selected' if ip.split('_')[1] == 'S' }}>SQL Server - port 1433</option>
+                                <option value="T" {{ 'selected' if ip.split('_')[1] == 'T' }}>Sysadmin Toolbox</option>
+                                <option value="X" {{ 'selected' if ip.split('_')[1] == 'X' }}>SOCKS Proxy - port 5222</option>
+                                <option value="Y" {{ 'selected' if ip.split('_')[1] == 'Y' }}>Shutdown WSL</option>
+                                <option value="Z" {{ 'selected' if ip.split('_')[1] == 'Z' }}>Wazuh Port - port 5601</option>
                             </select>
                             <input type="text" name="windows_name" value="{{ name }}" placeholder="Machine Name">
                             <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
@@ -187,8 +198,19 @@
                         <div class="machine-entry">
                             <input type="text" name="linux_ip" value="{{ ip.split('_')[0] }}" placeholder="IP Address">
                             <select name="linux_type">
-                                <option value="L" {% if ip.split('_')[1] == 'L' %}selected{% endif %}>Linux SSH (22)</option>
-                                <!-- Add other options as needed -->
+                                <option value="W" {{ 'selected' if ip.split('_')[1] == 'W' }}>Windows RDP - port 3389</option>
+                                <option value="D" {{ 'selected' if ip.split('_')[1] == 'D' }}>Portainer Port - port 9000</option>
+                                <option value="H" {{ 'selected' if ip.split('_')[1] == 'H' }}>Website Ports - ports 8080, 8443</option>
+                                <option value="J" {{ 'selected' if ip.split('_')[1] == 'J' }}>Java Web Ports - ports 8443</option>
+                                <option value="L" {{ 'selected' if ip.split('_')[1] == 'L' }}>Linux ssh - port 22</option>
+                                <option value="M" {{ 'selected' if ip.split('_')[1] == 'M' }}>Bastion Host ssh - port from base_port</option>
+                                <option value="N" {{ 'selected' if ip.split('_')[1] == 'N' }}>Nesus Port - ports 8834, 8000</option>
+                                <option value="P" {{ 'selected' if ip.split('_')[1] == 'P' }}>Publish using MSDeploy - port 8172</option>
+                                <option value="S" {{ 'selected' if ip.split('_')[1] == 'S' }}>SQL Server - port 1433</option>
+                                <option value="T" {{ 'selected' if ip.split('_')[1] == 'T' }}>Sysadmin Toolbox</option>
+                                <option value="X" {{ 'selected' if ip.split('_')[1] == 'X' }}>SOCKS Proxy - port 5222</option>
+                                <option value="Y" {{ 'selected' if ip.split('_')[1] == 'Y' }}>Shutdown WSL</option>
+                                <option value="Z" {{ 'selected' if ip.split('_')[1] == 'Z' }}>Wazuh Port - port 5601</option>
                             </select>
                             <input type="text" name="linux_name" value="{{ name }}" placeholder="Machine Name">
                             <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
@@ -210,8 +232,19 @@
                         <div class="machine-entry">
                             <input type="text" name="other_ip" value="{{ ip.split('_')[0] }}" placeholder="IP Address">
                             <select name="other_type">
-                                <option value="S" {% if ip.split('_')[1] == 'S' %}selected{% endif %}>SQL Server (1433)</option>
-                                <!-- Add other options as needed -->
+                                <option value="W" {{ 'selected' if ip.split('_')[1] == 'W' }}>Windows RDP - port 3389</option>
+                                <option value="D" {{ 'selected' if ip.split('_')[1] == 'D' }}>Portainer Port - port 9000</option>
+                                <option value="H" {{ 'selected' if ip.split('_')[1] == 'H' }}>Website Ports - ports 8080, 8443</option>
+                                <option value="J" {{ 'selected' if ip.split('_')[1] == 'J' }}>Java Web Ports - ports 8443</option>
+                                <option value="L" {{ 'selected' if ip.split('_')[1] == 'L' }}>Linux ssh - port 22</option>
+                                <option value="M" {{ 'selected' if ip.split('_')[1] == 'M' }}>Bastion Host ssh - port from base_port</option>
+                                <option value="N" {{ 'selected' if ip.split('_')[1] == 'N' }}>Nesus Port - ports 8834, 8000</option>
+                                <option value="P" {{ 'selected' if ip.split('_')[1] == 'P' }}>Publish using MSDeploy - port 8172</option>
+                                <option value="S" {{ 'selected' if ip.split('_')[1] == 'S' }}>SQL Server - port 1433</option>
+                                <option value="T" {{ 'selected' if ip.split('_')[1] == 'T' }}>Sysadmin Toolbox</option>
+                                <option value="X" {{ 'selected' if ip.split('_')[1] == 'X' }}>SOCKS Proxy - port 5222</option>
+                                <option value="Y" {{ 'selected' if ip.split('_')[1] == 'Y' }}>Shutdown WSL</option>
+                                <option value="Z" {{ 'selected' if ip.split('_')[1] == 'Z' }}>Wazuh Port - port 5601</option>
                             </select>
                             <input type="text" name="other_name" value="{{ name }}" placeholder="Machine Name">
                             <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
@@ -223,7 +256,7 @@
             </div>
 
             <div class="form-buttons">
-                <button type="submit" class="submit-button">Save</button>
+                <button type="submit" class="submit-button">Save Configuration</button>
                 <button type="button" class="reset-button" onclick="resetForm()">Reset</button>
             </div>
         </form>
@@ -231,29 +264,18 @@
 
     <script>
         const initialState = {
-            bastion: "{{ bastion }}",
-            base_port: "{{ base_port }}",
-            name: "{{ name }}",
-            windowsMachines: [
-                {% for ip, name in windowsMachines %}
-                ["{{ ip.split('_')[0] }}", "{{ name }}"],
-                {% endfor %}
-            ],
-            linuxMachines: [
-                {% for ip, name in linuxMachines %}
-                ["{{ ip.split('_')[0] }}", "{{ name }}"],
-                {% endfor %}
-            ],
-            otherMachines: [
-                {% for ip, name in otherMachines %}
-                ["{{ ip.split('_')[0] }}", "{{ name }}"],
-                {% endfor %}
-            ]
+            bastion: '{{ bastion }}',
+            base_port: '{{ base_port }}',
+            name: '{{ name }}',
+            windowsMachines: {{ windowsMachines | tojson }},
+            linuxMachines: {{ linuxMachines | tojson }},
+            otherMachines: {{ otherMachines | tojson }}
         };
 
         function toggleSection(sectionId) {
-            const content = document.getElementById(sectionId).querySelector('.section-content');
-            const header = document.getElementById(sectionId).querySelector('.section-header span');
+            const section = document.getElementById(sectionId);
+            const content = section.querySelector('.section-content');
+            const header = section.querySelector('.section-header span');
             if (content.classList.contains('show')) {
                 content.classList.remove('show');
                 header.textContent = '+';
@@ -264,15 +286,17 @@
         }
 
         function toggleSections(expand) {
-            document.querySelectorAll('.section-content').forEach(content => {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                const content = section.querySelector('.section-content');
+                const header = section.querySelector('.section-header span');
                 if (expand) {
                     content.classList.add('show');
+                    header.textContent = '−';
                 } else {
                     content.classList.remove('show');
+                    header.textContent = '+';
                 }
-            });
-            document.querySelectorAll('.section-header span').forEach(span => {
-                span.textContent = expand ? '−' : '+';
             });
         }
 
@@ -283,20 +307,19 @@
             newEntry.innerHTML = `
                 <input type="text" name="${containerId}_ip" placeholder="IP Address">
                 <select name="${containerId}_type">
-                    <option value="D">Portainer Port (8172)</option>
-                    <option value="H">Website Ports (8080, 8443)</option>
-                    <option value="J">Java Web Ports (8443)</option>
-                    <option value="L">Linux SSH (22)</option>
-                    <option value="M">Bastion Host SSH (Base Port)</option>
-                    <option value="N">Nesus Port (8834, 8000)</option>
-                    <option value="P">MSDeploy (8172)</option>
-                    <option value="W">Windows RDP (3389)</option>
-                    <option value="S">SQL Server (1433)</option>
+                    <option value="W">Windows RDP - port 3389</option>
+                    <option value="D">Portainer Port - port 9000</option>
+                    <option value="H">Website Ports - ports 8080, 8443</option>
+                    <option value="J">Java Web Ports - ports 8443</option>
+                    <option value="L">Linux ssh - port 22</option>
+                    <option value="M">Bastion Host ssh - port from base_port</option>
+                    <option value="N">Nesus Port - ports 8834, 8000</option>
+                    <option value="P">Publish using MSDeploy - port 8172</option>
+                    <option value="S">SQL Server - port 1433</option>
                     <option value="T">Sysadmin Toolbox</option>
-                    <option value="X">SOCKS Proxy (5222)</option>
+                    <option value="X">SOCKS Proxy - port 5222</option>
                     <option value="Y">Shutdown WSL</option>
-                    <option value="Z">Wazuh Port (5601)</option>
-                    <option value="#">Any number</option>
+                    <option value="Z">Wazuh Port - port 5601</option>
                 </select>
                 <input type="text" name="${containerId}_name" placeholder="Machine Name">
                 <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
@@ -314,12 +337,19 @@
                 const name = input.name;
                 if (name) {
                     if (name.includes('_ip')) {
-                        input.value = initialState[`${name.split('_')[0]}Machines`].find(entry => entry[0] === input.value)?.[0] || '';
+                        input.value = initialState[`${name.split('_')[0]}Machines`].find(entry => entry[0] === input.value)[0] || '';
                     } else if (name.includes('_name')) {
-                        input.value = initialState[`${name.split('_')[0]}Machines`].find(entry => entry[0] === input.previousElementSibling.value)?.[1] || '';
+                        input.value = initialState[`${name.split('_')[0]}Machines`].find(entry => entry[0] === input.previousElementSibling.value)[1] || '';
                     } else {
                         input.value = initialState[name] || '';
                     }
+                }
+            });
+            document.querySelectorAll('select').forEach(select => {
+                const name = select.name;
+                if (name) {
+                    const type = initialState[`${name.split('_')[0]}Machines`].find(entry => entry[0] === select.previousElementSibling.value)[1].split('_')[1];
+                    select.value = type;
                 }
             });
             document.querySelectorAll('.section-content').forEach(content => {

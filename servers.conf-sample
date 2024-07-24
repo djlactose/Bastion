@@ -13,7 +13,7 @@ base_port=22
 name=""
 ############################################
 # Connection Table
-# D = Portainer Port - port 8172
+# D = Portainer Port - port 9000
 # H = Website Ports - ports 8080, 8443
 # J - Java Web Ports - ports 8443
 # L = Linux ssh - port 22

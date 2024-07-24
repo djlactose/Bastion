@@ -22,6 +22,8 @@ COPY servers.sh /root/bin/servers.sh
 COPY servers.conf-sample /root/bin/servers.conf-sample
 COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
+COPY index.html /root/web/index.html
+COPY app.py /root/web/app.py
 
 RUN apt update && \
 apt install -y -o Dpkg::Options::="--force-confold" python3-flask openssh-server openssh-client libpam-google-authenticator sudo qrencode && \
