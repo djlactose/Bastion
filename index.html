@@ -113,6 +113,13 @@
         .collapse-expand-buttons button {
             margin: 0 10px;
         }
+        .form-buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .form-buttons button {
+            margin: 0 10px;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +128,6 @@
         <div class="collapse-expand-buttons">
             <button type="button" class="add-button" onclick="toggleSections(true)">Expand All</button>
             <button type="button" class="remove-button" onclick="toggleSections(false)">Collapse All</button>
-            <button type="button" class="reset-button" onclick="resetForm()">Reset</button>
         </div>
         <form action="/update" method="post">
             <div class="section" id="bastion-section">
@@ -196,7 +202,10 @@
                 </div>
             </div>
 
-            <button type="submit" class="submit-button">Save Configuration</button>
+            <div class="form-buttons">
+                <button type="submit" class="submit-button">Save Configuration</button>
+                <button type="button" class="reset-button" onclick="resetForm()">Reset</button>
+            </div>
         </form>
     </div>
 
