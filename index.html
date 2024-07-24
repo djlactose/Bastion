@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bastion Configuration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f7f9fc;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .section {
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            overflow: hidden;
+        }
+        .section-header {
+            background-color: #007BFF;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-content {
+            padding: 20px;
+            display: none;
+        }
+        .section-content.show {
+            display: block;
+        }
+        .section-content input[type="text"], 
+        .section-content input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .machine-entry {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .machine-entry input {
+            margin-right: 10px;
+        }
+        .remove-button, .add-button, .submit-button, .reset-button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .remove-button {
+            background-color: #dc3545;
+        }
+        .remove-button:hover {
+            background-color: #c82333;
+        }
+        .add-button:hover, .submit-button:hover, .reset-button:hover {
+            background-color: #0056b3;
+        }
+        .add-button {
+            background-color: #28a745;
+        }
+        .add-button:hover {
+            background-color: #218838;
+        }
+        .reset-button {
+            background-color: #6c757d;
+        }
+        .reset-button:hover {
+            background-color: #5a6268;
+        }
+        button {
+            margin-left: 10px;
+        }
+        .collapse-expand-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .collapse-expand-buttons button {
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bastion Configuration</h1>
+        <div class="collapse-expand-buttons">
+            <button type="button" class="add-button" onclick="toggleSections(true)">Expand All</button>
+            <button type="button" class="remove-button" onclick="toggleSections(false)">Collapse All</button>
+            <button type="button" class="reset-button" onclick="resetForm()">Reset</button>
+        </div>
+        <form action="/update" method="post">
+            <div class="section" id="bastion-section">
+                <div class="section-header" onclick="toggleSection('bastion-section')">
+                    Bastion Server
+                    <span>−</span>
+                </div>
+                <div class="section-content show">
+                    <label for="bastion">Bastion Server Address:</label>
+                    <input type="text" id="bastion" name="bastion" value="{{ bastion }}" placeholder="e.g., 192.168.1.1"><br>
+                    <label for="base_port">Port to use for Bastion:</label>
+                    <input type="number" id="base_port" name="base_port" value="{{ base_port }}" placeholder="Port Number"><br>
+                    <label for="name">Name for Bastion Host:</label>
+                    <input type="text" id="name" name="name" value="{{ name }}" placeholder="Host Name"><br>
+                </div>
+            </div>
+
+            <div class="section" id="windows-machines-section">
+                <div class="section-header" onclick="toggleSection('windows-machines-section')">
+                    Windows Machines
+                    <span>+</span>
+                </div>
+                <div class="section-content">
+                    <div id="windows-machines">
+                        {% for ip, name in windowsMachines %}
+                        <div class="machine-entry">
+                            <input type="text" name="windows_ip" value="{{ ip }}" placeholder="IP Address">
+                            <input type="text" name="windows_name" value="{{ name }}" placeholder="Machine Name">
+                            <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="add-button" onclick="addEntry('windows-machines')">Add Windows Machine</button>
+                </div>
+            </div>
+
+            <div class="section" id="linux-machines-section">
+                <div class="section-header" onclick="toggleSection('linux-machines-section')">
+                    Linux Machines
+                    <span>+</span>
+                </div>
+                <div class="section-content">
+                    <div id="linux-machines">
+                        {% for ip, name in linuxMachines %}
+                        <div class="machine-entry">
+                            <input type="text" name="linux_ip" value="{{ ip }}" placeholder="IP Address">
+                            <input type="text" name="linux_name" value="{{ name }}" placeholder="Machine Name">
+                            <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="add-button" onclick="addEntry('linux-machines')">Add Linux Machine</button>
+                </div>
+            </div>
+
+            <div class="section" id="other-machines-section">
+                <div class="section-header" onclick="toggleSection('other-machines-section')">
+                    Other Machines
+                    <span>+</span>
+                </div>
+                <div class="section-content">
+                    <div id="other-machines">
+                        {% for ip, name in otherMachines %}
+                        <div class="machine-entry">
+                            <input type="text" name="other_ip" value="{{ ip }}" placeholder="IP Address">
+                            <input type="text" name="other_name" value="{{ name }}" placeholder="Machine Name">
+                            <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="add-button" onclick="addEntry('other-machines')">Add Other Machine</button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-button">Save Configuration</button>
+        </form>
+    </div>
+
+    <script>
+        const initialState = {
+            bastion: '{{ bastion }}',
+            base_port: '{{ base_port }}',
+            name: '{{ name }}',
+            windowsMachines: {{ windowsMachines | tojson }},
+            linuxMachines: {{ linuxMachines | tojson }},
+            otherMachines: {{ otherMachines | tojson }}
+        };
+
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const content = section.querySelector('.section-content');
+            const header = section.querySelector('.section-header span');
+            if (content.classList.contains('show')) {
+                content.classList.remove('show');
+                header.textContent = '+';
+            } else {
+                content.classList.add('show');
+                header.textContent = '−';
+            }
+        }
+
+        function toggleSections(expand) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                const content = section.querySelector('.section-content');
+                const header = section.querySelector('.section-header span');
+                if (expand) {
+                    content.classList.add('show');
+                    header.textContent = '−';
+                } else {
+                    content.classList.remove('show');
+                    header.textContent = '+';
+                }
+            });
+        }
+
+        function addEntry(containerId) {
+            const container = document.getElementById(containerId);
+            const newEntry = document.createElement('div');
+            newEntry.className = 'machine-entry';
+            newEntry.innerHTML = `
+                <input type="text" name="${containerId}_ip" placeholder="IP Address">
+                <input type="text" name="${containerId}_name" placeholder="Machine Name">
+                <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
+            `;
+            container.appendChild(newEntry);
+        }
+
+        function removeEntry(button) {
+            const entryDiv = button.closest('.machine-entry');
+            entryDiv.remove();
+        }
+
+        function resetForm() {
+            document.querySelectorAll('input').forEach(input => {
+                const name = input.name;
+                if (name) {
+                    if (name.includes('_ip')) {
+                        input.value = initialState[`${name.split('_')[0]}Machines`].find(entry => entry[0] === input.value)[0] || '';
+                    } else if (name.includes('_name')) {
+                        input.value = initialState[`${name.split('_')[0]}Machines`].find(entry => entry[0] === input.previousElementSibling.value)[1] || '';
+                    } else {
+                        input.value = initialState[name] || '';
+                    }
+                }
+            });
+            document.querySelectorAll('.section-content').forEach(content => {
+                content.classList.remove('show');
+            });
+            document.querySelectorAll('.section-header span').forEach(span => {
+                span.textContent = '+';
+            });
+            document.querySelector('#bastion-section .section-content').classList.add('show');
+            document.querySelector('#bastion-section .section-header span').textContent = '−';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            resetForm();
+        });
+    </script>
+</body>
+</html>

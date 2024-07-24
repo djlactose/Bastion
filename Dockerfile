@@ -1,5 +1,5 @@
 #Docker Image to spin up a Bastion Server
-FROM ubuntu
+FROM ubuntu:24.10
 
 EXPOSE 22
 EXPOSE 5000
@@ -24,7 +24,7 @@ COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
 
 RUN apt update && \
-apt install -y -o Dpkg::Options::="--force-confold" openssh-server openssh-client libpam-google-authenticator sudo qrencode && \
+apt install -y -o Dpkg::Options::="--force-confold" python3-flask openssh-server openssh-client libpam-google-authenticator sudo qrencode && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/install_bastion.sh && \
@@ -34,7 +34,9 @@ chmod 755 /root/bin/BackupUsers.sh && \
 chmod 755 /root/bin/RestoreUsers.sh && \
 chmod 644 /root/bin/servers.conf-sample && \
 chmod 755 /root/bin/servers.sh && \
-mkdir -p -m0755 /var/run/sshd
+mkdir -p -m0755 /var/run/sshd && \
+apt-get clean && \
+rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root/bin
 
