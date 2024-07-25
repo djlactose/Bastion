@@ -28,30 +28,30 @@ def parse_config(file_path):
                 elif line.startswith('name='):
                     config['name'] = line.split('=')[1].strip('"')
                 elif line.startswith('windowsMachines='):
-                    content = line.split('=')[1].strip('()')
+                    content = line.split('=("')[1].strip('")')
                     items = content.split('" "')
                     if len(items) % 2 == 0:  # Ensure pairs
                         config['windowsMachines'] = [
-                            (items[i].strip('" '), items[i + 1].strip('" '))
+                            (items[i].strip('" '), items[i+1].strip('" '))
                             for i in range(0, len(items), 2)
                         ]
                 elif line.startswith('linuxMachines='):
-                    content = line.split('=')[1].strip('()')
+                    content = line.split('=("')[1].strip('")')
                     items = content.split('" "')
                     if len(items) % 2 == 0:  # Ensure pairs
                         config['linuxMachines'] = [
-                            (items[i].strip('" '), items[i + 1].strip('" '))
+                            (items[i].strip('" '), items[i+1].strip('" '))
                             for i in range(0, len(items), 2)
                         ]
                 elif line.startswith('otherMachines='):
-                    content = line.split('=')[1].strip('()')
+                    content = line.split('=("')[1].strip('")')
                     items = content.split('" "')
                     if len(items) % 2 == 0:  # Ensure pairs
                         config['otherMachines'] = [
-                            (items[i].strip('" '), items[i + 1].strip('" '))
+                            (items[i].strip('" '), items[i+1].strip('" '))
                             for i in range(0, len(items), 2)
                         ]
-
+    
     return config
 
 @app.route('/')
@@ -64,36 +64,28 @@ def update():
     bastion = request.form['bastion']
     base_port = request.form['base_port']
     name = request.form['name']
-
+    
     windows_ips = request.form.getlist('windows_ip')
-    windows_types = request.form.getlist('windows_type')
-    windows_other_types = request.form.getlist('windows_other_type')
     windows_names = request.form.getlist('windows_name')
-
     linux_ips = request.form.getlist('linux_ip')
-    linux_types = request.form.getlist('linux_type')
-    linux_other_types = request.form.getlist('linux_other_type')
     linux_names = request.form.getlist('linux_name')
-
     other_ips = request.form.getlist('other_ip')
-    other_types = request.form.getlist('other_type')
-    other_other_types = request.form.getlist('other_other_type')
     other_names = request.form.getlist('other_name')
 
-    # Combine IP and connection type
+    # Filter out blank entries
     windows_machines = [
-        '"{}_{}" "{}"'.format(ip.strip(), other_type.strip() if type == 'other' else type.strip(), name.strip())
-        for ip, type, other_type, name in zip(windows_ips, windows_types, windows_other_types, windows_names)
+        '"{}" "{}"'.format(ip.strip(), name.strip())
+        for ip, name in zip(windows_ips, windows_names)
         if ip.strip() and name.strip()
     ]
     linux_machines = [
-        '"{}_{}" "{}"'.format(ip.strip(), other_type.strip() if type == 'other' else type.strip(), name.strip())
-        for ip, type, other_type, name in zip(linux_ips, linux_types, linux_other_types, linux_names)
+        '"{}" "{}"'.format(ip.strip(), name.strip())
+        for ip, name in zip(linux_ips, linux_names)
         if ip.strip() and name.strip()
     ]
     other_machines = [
-        '"{}_{}" "{}"'.format(ip.strip(), other_type.strip() if type == 'other' else type.strip(), name.strip())
-        for ip, type, other_type, name in zip(other_ips, other_types, other_other_types, other_names)
+        '"{}" "{}"'.format(ip.strip(), name.strip())
+        for ip, name in zip(other_ips, other_names)
         if ip.strip() and name.strip()
     ]
 
@@ -118,7 +110,7 @@ base_port={base_port}
 name="{name}"
 ############################################
 # Connection Table
-# D = Portainer Port - port 9000
+# D = Portainer Port - port 8172
 # H = Website Ports - ports 8080, 8443
 # J - Java Web Ports - ports 8443
 # L = Linux ssh - port 22
