@@ -52,24 +52,28 @@
         .section-content.show {
             display: block;
         }
-        .section-content input[type="text"], 
-        .section-content input[type="number"] {
-            width: calc(100% - 22px);
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
             padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .machine-entry input[type="text"],
+        .machine-entry select {
+            width: 100%;
+            padding: 10px;
+            margin: 0;
             box-sizing: border-box;
-        }
-        .machine-entry {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .machine-entry input {
-            margin-right: 10px;
         }
         .remove-button, .add-button, .submit-button, .reset-button {
             background-color: #007BFF;
@@ -103,9 +107,6 @@
         .reset-button:hover {
             background-color: #e0a800;
         }
-        button {
-            margin-left: 10px;
-        }
         .collapse-expand-buttons {
             text-align: center;
             margin-bottom: 20px;
@@ -115,6 +116,9 @@
         }
         .form-buttons {
             text-align: center;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -147,14 +151,49 @@
                     <span>+</span>
                 </div>
                 <div class="section-content">
-                    <div id="windows-machines">
-                        {% for ip, name in windowsMachines %}
-                        <div class="machine-entry">
-                            <input type="text" name="windows_ip" value="{{ ip }}" placeholder="IP Address">
-                            <input type="text" name="windows_name" value="{{ name }}" placeholder="Machine Name">
-                            <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
-                        </div>
-                        {% endfor %}
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Connection Type</th>
+                                    <th>Other Connection Type</th>
+                                    <th>Machine Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="windows-machines">
+                                {% for ip, name in windowsMachines %}
+                                {% set ip_parts = ip.split('_') %}
+                                <tr class="machine-entry">
+                                    <td><input type="text" name="windows_ip" value="{{ ip_parts[0] }}" placeholder="IP Address"></td>
+                                    <td>
+                                        <select name="windows_connection" onchange="showOtherField(this)">
+                                            <option value="W" {% if ip_parts[1] == 'W' %}selected{% endif %}>Windows</option>
+                                            <option value="D" {% if ip_parts[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
+                                            <option value="H" {% if ip_parts[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
+                                            <option value="J" {% if ip_parts[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
+                                            <option value="L" {% if ip_parts[1] == 'L' %}selected{% endif %}>Linux</option>
+                                            <option value="M" {% if ip_parts[1] == 'M' %}selected{% endif %}>Bastion Host</option>
+                                            <option value="N" {% if ip_parts[1] == 'N' %}selected{% endif %}>Nesus Port - ports 8834, 8000</option>
+                                            <option value="P" {% if ip_parts[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
+                                            <option value="S" {% if ip_parts[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
+                                            <option value="T" {% if ip_parts[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
+                                            <option value="X" {% if ip_parts[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
+                                            <option value="Y" {% if ip_parts[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
+                                            <option value="Z" {% if ip_parts[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
+                                            <option value="Other" {% if ip_parts[1] not in ['W', 'D', 'H', 'J', 'L', 'M', 'N', 'P', 'S', 'T', 'X', 'Y', 'Z'] %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="windows_other_connection" value="{% if ip_parts[1] not in ['W', 'D', 'H', 'J', 'L', 'M', 'N', 'P', 'S', 'T', 'X', 'Y', 'Z'] %}{{ ip_parts[1] }}{% endif %}" placeholder="Other Connection Type" class="{% if ip_parts[1] not in ['W', 'D', 'H', 'J', 'L', 'M', 'N', 'P', 'S', 'T', 'X', 'Y', 'Z'] %}{% else %}hidden{% endif %}">
+                                    </td>
+                                    <td><input type="text" name="windows_name" value="{{ name }}" placeholder="Machine Name"></td>
+                                    <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                     <button type="button" class="add-button" onclick="addEntry('windows-machines')">Add Windows Machine</button>
                 </div>
@@ -166,14 +205,48 @@
                     <span>+</span>
                 </div>
                 <div class="section-content">
-                    <div id="linux-machines">
-                        {% for ip, name in linuxMachines %}
-                        <div class="machine-entry">
-                            <input type="text" name="linux_ip" value="{{ ip }}" placeholder="IP Address">
-                            <input type="text" name="linux_name" value="{{ name }}" placeholder="Machine Name">
-                            <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
-                        </div>
-                        {% endfor %}
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Connection Type</th>
+                                    <th>Other Connection Type</th>
+                                    <th>Machine Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="linux-machines">
+                                {% for ip, name in linuxMachines %}
+                                {% set ip_parts = ip.split('_') %}
+                                <tr class="machine-entry">
+                                    <td><input type="text" name="linux_ip" value="{{ ip_parts[0] }}" placeholder="IP Address"></td>
+                                    <td>
+                                        <select name="linux_connection" onchange="showOtherField(this)">
+                                            <option value="L" {% if ip_parts[1] == 'L' %}selected{% endif %}>Linux</option>
+                                            <option value="D" {% if ip_parts[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
+                                            <option value="H" {% if ip_parts[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
+                                            <option value="J" {% if ip_parts[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
+                                            <option value="M" {% if ip_parts[1] == 'M' %}selected{% endif %}>Bastion Host</option>
+                                            <option value="N" {% if ip_parts[1] == 'N' %}selected{% endif %}>Nesus Port - ports 8834, 8000</option>
+                                            <option value="P" {% if ip_parts[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
+                                            <option value="S" {% if ip_parts[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
+                                            <option value="T" {% if ip_parts[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
+                                            <option value="X" {% if ip_parts[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
+                                            <option value="Y" {% if ip_parts[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
+                                            <option value="Z" {% if ip_parts[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
+                                            <option value="Other" {% if ip_parts[1] not in ['L', 'D', 'H', 'J', 'M', 'N', 'P', 'S', 'T', 'X', 'Y', 'Z'] %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="linux_other_connection" value="{% if ip_parts[1] not in ['L', 'D', 'H', 'J', 'M', 'N', 'P', 'S', 'T', 'X', 'Y', 'Z'] %}{{ ip_parts[1] }}{% endif %}" placeholder="Other Connection Type" class="{% if ip_parts[1] not in ['L', 'D', 'H', 'J', 'M', 'N', 'P', 'S', 'T', 'X', 'Y', 'Z'] %}{% else %}hidden{% endif %}">
+                                    </td>
+                                    <td><input type="text" name="linux_name" value="{{ name }}" placeholder="Machine Name"></td>
+                                    <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                     <button type="button" class="add-button" onclick="addEntry('linux-machines')">Add Linux Machine</button>
                 </div>
@@ -185,14 +258,48 @@
                     <span>+</span>
                 </div>
                 <div class="section-content">
-                    <div id="other-machines">
-                        {% for ip, name in otherMachines %}
-                        <div class="machine-entry">
-                            <input type="text" name="other_ip" value="{{ ip }}" placeholder="IP Address">
-                            <input type="text" name="other_name" value="{{ name }}" placeholder="Machine Name">
-                            <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
-                        </div>
-                        {% endfor %}
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Connection Type</th>
+                                    <th>Other Connection Type</th>
+                                    <th>Machine Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="other-machines">
+                                {% for ip, name in otherMachines %}
+                                {% set ip_parts = ip.split('_') %}
+                                <tr class="machine-entry">
+                                    <td><input type="text" name="other_ip" value="{{ ip_parts[0] }}" placeholder="IP Address"></td>
+                                    <td>
+                                        <select name="other_connection" onchange="showOtherField(this)">
+                                            <option value="S" {% if ip_parts[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
+                                            <option value="D" {% if ip_parts[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
+                                            <option value="H" {% if ip_parts[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
+                                            <option value="J" {% if ip_parts[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
+                                            <option value="L" {% if ip_parts[1] == 'L' %}selected{% endif %}>Linux</option>
+                                            <option value="M" {% if ip_parts[1] == 'M' %}selected{% endif %}>Bastion Host</option>
+                                            <option value="N" {% if ip_parts[1] == 'N' %}selected{% endif %}>Nesus Port - ports 8834, 8000</option>
+                                            <option value="P" {% if ip_parts[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
+                                            <option value="T" {% if ip_parts[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
+                                            <option value="X" {% if ip_parts[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
+                                            <option value="Y" {% if ip_parts[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
+                                            <option value="Z" {% if ip_parts[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
+                                            <option value="Other" {% if ip_parts[1] not in ['S', 'D', 'H', 'J', 'L', 'M', 'N', 'P', 'T', 'X', 'Y', 'Z'] %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="other_other_connection" value="{% if ip_parts[1] not in ['S', 'D', 'H', 'J', 'L', 'M', 'N', 'P', 'T', 'X', 'Y', 'Z'] %}{{ ip_parts[1] }}{% endif %}" placeholder="Other Connection Type" class="{% if ip_parts[1] not in ['S', 'D', 'H', 'J', 'L', 'M', 'N', 'P', 'T', 'X', 'Y', 'Z'] %}{% else %}hidden{% endif %}">
+                                    </td>
+                                    <td><input type="text" name="other_name" value="{{ name }}" placeholder="Machine Name"></td>
+                                    <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                     <button type="button" class="add-button" onclick="addEntry('other-machines')">Add Other Machine</button>
                 </div>
@@ -236,18 +343,50 @@
 
         function addEntry(containerId) {
             const container = document.getElementById(containerId);
-            const entryDiv = document.createElement('div');
+            const entryDiv = document.createElement('tr');
             entryDiv.classList.add('machine-entry');
+            const count = container.querySelectorAll('.machine-entry').length + 1;
             entryDiv.innerHTML = `
-                <input type="text" name="${containerId.split('-')[0]}_ip" placeholder="IP Address">
-                <input type="text" name="${containerId.split('-')[0]}_name" placeholder="Machine Name">
-                <button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button>
+                <td><input type="text" name="${containerId.split('-')[0]}_ip" placeholder="IP Address"></td>
+                <td>
+                    <select name="${containerId.split('-')[0]}_connection" onchange="showOtherField(this)">
+                        <option value="W">Windows</option>
+                        <option value="D">Portainer Port - port 9000</option>
+                        <option value="H">Website Ports - ports 8080, 8443</option>
+                        <option value="J">Java Web Ports - ports 8443</option>
+                        <option value="L">Linux</option>
+                        <option value="M">Bastion Host</option>
+                        <option value="N">Nesus Port - ports 8834, 8000</option>
+                        <option value="P">Publish using MSDeploy - port 8172</option>
+                        <option value="S">SQL Server - port 1433</option>
+                        <option value="T">Sysadmin Toolbox</option>
+                        <option value="X">SOCKS Proxy - port 5222</option>
+                        <option value="Y">Shutdown WSL</option>
+                        <option value="Z">Wazuh Port - port 5601</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="text" name="${containerId.split('-')[0]}_other_connection" placeholder="Other Connection Type" class="hidden">
+                </td>
+                <td><input type="text" name="${containerId.split('-')[0]}_name" placeholder="Machine Name"></td>
+                <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
             `;
             container.appendChild(entryDiv);
         }
 
         function removeEntry(button) {
-            button.parentElement.remove();
+            button.closest('tr').remove();
+        }
+
+        function showOtherField(selectElement) {
+            const otherField = selectElement.closest('tr').querySelector('input[name$="_other_connection"]');
+            if (selectElement.value === 'Other') {
+                otherField.classList.remove('hidden');
+            } else {
+                otherField.classList.add('hidden');
+                otherField.value = '';
+            }
         }
     </script>
 </body>
