@@ -2,7 +2,7 @@
 FROM ubuntu:24.10
 
 EXPOSE 22
-EXPOSE 5000
+EXPOSE 8000
 
 ENV dns 9.9.9.9
 
@@ -24,9 +24,10 @@ COPY install_bastion.sh /root/bin/install_bastion.sh
 COPY run.sh /root/bin/run.sh
 COPY index.html /root/web/index.html
 COPY app.py /root/web/app.py
+COPY wsgi.py /root/web/wsgi.py
 
 RUN apt update && \
-apt install -y -o Dpkg::Options::="--force-confold" python3-flask openssh-server openssh-client libpam-google-authenticator sudo qrencode && \
+apt install -y -o Dpkg::Options::="--force-confold" python3-flask python3-gunicorn gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/install_bastion.sh && \
