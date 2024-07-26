@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        Bastion Server Configuration
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('update') }}" method="POST">
+            <div class="form-group">
+                <label for="bastion">Bastion Servers</label>
+                <div id="bastion-list">
+                    {% for bastion in bastion %}
+                        <input type="text" class="form-control mb-2" name="bastion" value="{{ bastion }}">
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addBastion()">Add Bastion</button>
+            </div>
+
+            <div class="form-group">
+                <label for="base_port">Base Port</label>
+                <input type="text" class="form-control" name="base_port" value="{{ base_port }}">
+            </div>
+
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" class="form-control" name="name" value="{{ name }}">
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Windows Machines
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>IP</th>
+                                <th>Connection Type</th>
+                                <th>Machine Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for machine in windowsMachines %}
+                            <tr>
+                                <td><input type="text" class="form-control" name="windows_ip" value="{{ machine[0].split('_')[0] }}"></td>
+                                <td>
+                                    <select class="form-control" name="windows_connection">
+                                        <option value="W" {% if machine[0].split('_')[1] == 'W' %}selected{% endif %}>Windows</option>
+                                        <option value="Other" {% if machine[0].split('_')[1] not in ['W'] %}selected{% endif %}>Other</option>
+                                    </select>
+                                    <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['W'] else '' }}">
+                                </td>
+                                <td><input type="text" class="form-control" name="windows_name" value="{{ machine[1] }}"></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-secondary" onclick="addWindowsMachine()">Add Windows Machine</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Linux Machines
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>IP</th>
+                                <th>Connection Type</th>
+                                <th>Machine Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for machine in linuxMachines %}
+                            <tr>
+                                <td><input type="text" class="form-control" name="linux_ip" value="{{ machine[0].split('_')[0] }}"></td>
+                                <td>
+                                    <select class="form-control" name="linux_connection">
+                                        <option value="L" {% if machine[0].split('_')[1] == 'L' %}selected{% endif %}>Linux</option>
+                                        <option value="Other" {% if machine[0].split('_')[1] not in ['L'] %}selected{% endif %}>Other</option>
+                                    </select>
+                                    <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['L'] else '' }}">
+                                </td>
+                                <td><input type="text" class="form-control" name="linux_name" value="{{ machine[1] }}"></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-secondary" onclick="addLinuxMachine()">Add Linux Machine</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Other Machines
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>IP</th>
+                                <th>Connection Type</th>
+                                <th>Machine Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for machine in otherMachines %}
+                            <tr>
+                                <td><input type="text" class="form-control" name="other_ip" value="{{ machine[0].split('_')[0] }}"></td>
+                                <td>
+                                    <select class="form-control" name="other_connection">
+                                        <option value="S" {% if machine[0].split('_')[1] == 'S' %}selected{% endif %}>SQL Server</option>
+                                        <option value="Other" {% if machine[0].split('_')[1] not in ['S'] %}selected{% endif %}>Other</option>
+                                    </select>
+                                    <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['S'] else '' }}">
+                                </td>
+                                <td><input type="text" class="form-control" name="other_name" value="{{ machine[1] }}"></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-secondary" onclick="addOtherMachine()">Add Other Machine</button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function addBastion() {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'bastion';
+        input.classList.add('form-control', 'mb-2');
+        document.getElementById('bastion-list').appendChild(input);
+    }
+
+    function addWindowsMachine() {
+        const table = document.querySelectorAll('table')[0].querySelector('tbody');
+        const row = table.insertRow(-1);
+        row.innerHTML = '<td><input type="text" class="form-control" name="windows_ip"></td>' +
+                        '<td>' +
+                            '<select class="form-control" name="windows_connection">' +
+                                '<option value="W">Windows</option>' +
+                                '<option value="Other">Other</option>' +
+                            '</select>' +
+                            '<input type="text" class="form-control mt-2" name="windows_other_connection">' +
+                        '</td>' +
+                        '<td><input type="text" class="form-control" name="windows_name"></td>';
+    }
+
+    function addLinuxMachine() {
+        const table = document.querySelectorAll('table')[1].querySelector('tbody');
+        const row = table.insertRow(-1);
+        row.innerHTML = '<td><input type="text" class="form-control" name="linux_ip"></td>' +
+                        '<td>' +
+                            '<select class="form-control" name="linux_connection">' +
+                                '<option value="L">Linux</option>' +
+                                '<option value="Other">Other</option>' +
+                            '</select>' +
+                            '<input type="text" class="form-control mt-2" name="linux_other_connection">' +
+                        '</td>' +
+                        '<td><input type="text" class="form-control" name="linux_name"></td>';
+    }
+
+    function addOtherMachine() {
+        const table = document.querySelectorAll('table')[2].querySelector('tbody');
+        const row = table.insertRow(-1);
+        row.innerHTML = '<td><input type="text" class="form-control" name="other_ip"></td>' +
+                        '<td>' +
+                            '<select class="form-control" name="other_connection">' +
+                                '<option value="S">SQL Server</option>' +
+                                '<option value="Other">Other</option>' +
+                            '</select>' +
+                            '<input type="text" class="form-control mt-2" name="other_other_connection">' +
+                        '</td>' +
+                        '<td><input type="text" class="form-control" name="other_name"></td>';
+    }
+</script>
+{% endblock %}
