@@ -1,2 +1,4 @@
 servers.conf
 .devcontainer/
+.github/
+__pycache__/
