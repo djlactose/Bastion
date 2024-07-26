@@ -2,3 +2,4 @@ servers.conf
 .devcontainer/
 .github/
 __pycache__/
+web/instance/
