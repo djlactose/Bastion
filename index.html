@@ -154,8 +154,26 @@
                     <span>−</span>
                 </div>
                 <div class="section-content show">
-                    <label for="bastion">Bastion Server Address:</label>
-                    <input type="text" id="bastion" name="bastion" value="{{ bastion }}" placeholder="e.g., 192.168.1.1"><br>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Bastion Server Address</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bastion-servers">
+                                {% for host in bastion %}
+                                <tr class="bastion-entry">
+                                    <td><input type="text" name="bastion" value="{{ host }}" placeholder="e.g., app1.zydoc.com"></td>
+                                    <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="add-button" onclick="addEntry('bastion-servers')">Add Bastion Server</button>
+                    <br>
                     <label for="base_port">Port to use for Bastion:</label>
                     <input type="number" id="base_port" name="base_port" value="{{ base_port }}" placeholder="Port Number"><br>
                     <label for="name">Name for Bastion Host:</label>
@@ -368,32 +386,39 @@
             const entryDiv = document.createElement('tr');
             entryDiv.classList.add('machine-entry');
             const count = container.querySelectorAll('.machine-entry').length + 1;
-            entryDiv.innerHTML = `
-                <td><input type="text" name="${containerId.split('-')[0]}_ip" placeholder="IP Address"></td>
-                <td>
-                    <select name="${containerId.split('-')[0]}_connection" onchange="showOtherField(this)">
-                        <option value="W">Windows</option>
-                        <option value="D">Portainer Port - port 9000</option>
-                        <option value="H">Website Ports - ports 8080, 8443</option>
-                        <option value="J">Java Web Ports - ports 8443</option>
-                        <option value="L">Linux</option>
-                        <option value="M">Bastion Host</option>
-                        <option value="N">Nesus Port - ports 8834, 8000</option>
-                        <option value="P">Publish using MSDeploy - port 8172</option>
-                        <option value="S">SQL Server - port 1433</option>
-                        <option value="T">Sysadmin Toolbox</option>
-                        <option value="X">SOCKS Proxy - port 5222</option>
-                        <option value="Y">Shutdown WSL</option>
-                        <option value="Z">Wazuh Port - port 5601</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </td>
-                <td>
-                    <input type="text" name="${containerId.split('-')[0]}_other_connection" placeholder="Other Connection Type" class="hidden">
-                </td>
-                <td><input type="text" name="${containerId.split('-')[0]}_name" placeholder="Machine Name"></td>
-                <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
-            `;
+            if (containerId === 'bastion-servers') {
+                entryDiv.innerHTML = `
+                    <td><input type="text" name="bastion" placeholder="e.g., app1.zydoc.com"></td>
+                    <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
+                `;
+            } else {
+                entryDiv.innerHTML = `
+                    <td><input type="text" name="${containerId.split('-')[0]}_ip" placeholder="IP Address"></td>
+                    <td>
+                        <select name="${containerId.split('-')[0]}_connection" onchange="showOtherField(this)">
+                            <option value="W">Windows</option>
+                            <option value="D">Portainer Port - port 9000</option>
+                            <option value="H">Website Ports - ports 8080, 8443</option>
+                            <option value="J">Java Web Ports - ports 8443</option>
+                            <option value="L">Linux</option>
+                            <option value="M">Bastion Host</option>
+                            <option value="N">Nesus Port - ports 8834, 8000</option>
+                            <option value="P">Publish using MSDeploy - port 8172</option>
+                            <option value="S">SQL Server - port 1433</option>
+                            <option value="T">Sysadmin Toolbox</option>
+                            <option value="X">SOCKS Proxy - port 5222</option>
+                            <option value="Y">Shutdown WSL</option>
+                            <option value="Z">Wazuh Port - port 5601</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" name="${containerId.split('-')[0]}_other_connection" placeholder="Other Connection Type" class="hidden">
+                    </td>
+                    <td><input type="text" name="${containerId.split('-')[0]}_name" placeholder="Machine Name"></td>
+                    <td><button type="button" class="remove-button" onclick="removeEntry(this)">Remove</button></td>
+                `;
+            }
             container.appendChild(entryDiv);
         }
 

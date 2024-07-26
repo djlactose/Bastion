@@ -8,7 +8,7 @@ config_file = 'servers.conf'
 
 def parse_config(file_path):
     config = {
-        'bastion': '',
+        'bastion': [],
         'base_port': 22,
         'name': '',
         'windowsMachines': [],
@@ -22,7 +22,8 @@ def parse_config(file_path):
             for line in lines:
                 line = line.strip()
                 if line.startswith('bastion='):
-                    config['bastion'] = line.split('=')[1].strip('()"')
+                    bastion_hosts = line.split('=')[1].strip('()"').split('" "')
+                    config['bastion'] = [host.strip('"') for host in bastion_hosts]
                 elif line.startswith('base_port='):
                     config['base_port'] = line.split('=')[1]
                 elif line.startswith('name='):
@@ -49,7 +50,7 @@ def index():
 
 @app.route('/update', methods=['POST'])
 def update():
-    bastion = request.form['bastion']
+    bastion = request.form.getlist('bastion')
     base_port = request.form['base_port']
     name = request.form['name']
     
@@ -83,6 +84,7 @@ def update():
     linux_machines = process_entries(linux_ips, linux_connections, linux_other_connections, linux_names)
     other_machines = process_entries(other_ips, other_connections, other_other_connections, other_names)
 
+    bastion_str = 'bastion=(' + ' '.join(f'"{host}"' for host in bastion) + ')'
     windows_machines_str = 'windowsMachines=(' + ' '.join(windows_machines) + ')'
     linux_machines_str = 'linuxMachines=(' + ' '.join(linux_machines) + ')'
     other_machines_str = 'otherMachines=(' + ' '.join(other_machines) + ')'
@@ -91,7 +93,7 @@ def update():
 ############################################
 #Bastion Server Address 
 #NOTE: To load balance enter more than one host in quotes
-bastion=("{bastion}")
+{bastion_str}
 ############################################
 ############################################
 #Port to use for Bastion
