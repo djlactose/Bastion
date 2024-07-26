@@ -124,6 +124,42 @@
         .hidden {
             display: none;
         }
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+        }
+        .toast.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @-webkit-keyframes fadein {
+            from {bottom: 0; opacity: 0;} 
+            to {bottom: 30px; opacity: 1;}
+        }
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+        @-webkit-keyframes fadeout {
+            from {bottom: 30px; opacity: 1;} 
+            to {bottom: 0; opacity: 0;}
+        }
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
         footer {
             background-color: #f1f1f1;
             padding: 20px;
@@ -352,6 +388,8 @@
         <p><a href="https://github.com/djlactose/Bastion">Code Repository</a> | MIT License</p>
     </footer>
 
+    <div id="toast" class="toast">Configuration saved successfully!</div>
+
     <script>
         function toggleSection(sectionId) {
             const section = document.getElementById(sectionId);
@@ -435,6 +473,31 @@
                 otherField.value = '';
             }
         }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.className = "toast show";
+            setTimeout(function() {
+                toast.className = toast.className.replace("show", "");
+            }, 3000);
+        }
+
+        document.getElementById('config-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const formData = new FormData(this);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/update', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    showToast('Configuration saved successfully!');
+                } else {
+                    showToast('Error saving configuration.');
+                }
+            };
+            xhr.send(formData);
+        });
     </script>
 </body>
 </html>
