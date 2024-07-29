@@ -9,7 +9,8 @@ To keep all generated accounts you need to create the two following volumes:
 * /home
 * /root/bastion
 * /etc/bastion
+* /root/web/instance - Only needed if you are using the Web Interface
 
 ## Ports
 
-* 8000 - If you want to make the web interface publically accessible you should open this port.  You can still access the bastion host without making this accessible.
+* 8000 - **BETA* If you want to make the web interface publically accessible you should open this port.  You can still access the bastion host without making this accessible.

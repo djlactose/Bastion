@@ -9,6 +9,7 @@ ENV dns=9.9.9.9
 VOLUME /home
 VOLUME /root/bastion
 VOLUME /etc/bastion
+VOLUME /root/web/instance
 
 HEALTHCHECK CMD exit $(nc -q 0 -w 1 localhost 22|grep -c "SSH")
 
