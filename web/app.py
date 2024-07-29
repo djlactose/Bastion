@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import os
 
@@ -138,11 +139,11 @@ name="{name}"
 # D = Portainer Port - port 9000
 # H = Website Ports - ports 8080, 8443
 # J - Java Web Ports - ports 8443
-# L = Linux
-# M - Bastion Host
-# N = Nesus Port - ports 8834, 8000
+# L = Linux ssh - port 22
+# M - Bastion Host ssh - port from base_port
+# N = Nessus Port - ports 8834, 8000
 # P = Publish using MSDeploy - port 8172
-# W = Windows
+# W = Windows RDP - port 3389
 # S = SQL Server - port 1433
 # T = Sysadmin Toolbox
 # X = SOCKS Proxy - port 5222
@@ -174,7 +175,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        if user and user.password == password:
+        if user and check_password_hash(user.password, password):
             login_user(user)
             return redirect(url_for('index'))
         else:
@@ -190,7 +191,8 @@ def setup():
         username = request.form['username']
         password = request.form['password']
         is_admin = True
-        user = User(username=username, password=password, is_admin=is_admin)
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        user = User(username=username, password=hashed_password, is_admin=is_admin)
         db.session.add(user)
         db.session.commit()
         flash(f'Admin account created for {username}!', 'success')
@@ -208,7 +210,8 @@ def register():
         username = request.form['username']
         password = request.form['password']
         is_admin = 'is_admin' in request.form
-        user = User(username=username, password=password, is_admin=is_admin)
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        user = User(username=username, password=hashed_password, is_admin=is_admin)
         db.session.add(user)
         db.session.commit()
         flash(f'Account created for {username}!', 'success')
@@ -241,7 +244,8 @@ def add_user():
         username = request.form['username']
         password = request.form['password']
         is_admin = 'is_admin' in request.form
-        user = User(username=username, password=password, is_admin=is_admin)
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        user = User(username=username, password=hashed_password, is_admin=is_admin)
         db.session.add(user)
         db.session.commit()
         flash(f'Account created for {username}!', 'success')
@@ -258,7 +262,8 @@ def edit_user(id):
     user = User.query.get_or_404(id)
     if request.method == 'POST':
         user.username = request.form['username']
-        user.password = request.form['password']
+        if request.form['password']:
+            user.password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
         user.is_admin = 'is_admin' in request.form
         db.session.commit()
         flash(f'Account updated for {user.username}!', 'success')
