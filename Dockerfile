@@ -4,7 +4,7 @@ FROM ubuntu:24.10
 EXPOSE 22
 EXPOSE 8000
 
-ENV dns 9.9.9.9
+ENV dns=9.9.9.9
 
 VOLUME /home
 VOLUME /root/bastion
