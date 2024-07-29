@@ -21,6 +21,5 @@ else
 fi
 cp /root/bin/servers.sh /etc/bastion/
 cp /root/bin/servers.conf-sample /etc/bastion/
-echo "nameserver	$dns" >> /etc/resolv.conf
 gunicorn -w 4 -b 0.0.0.0:8000 --chdir /root/web/ wsgi:app &
 /usr/sbin/sshd -f /etc/ssh/sshd_config -D -e
