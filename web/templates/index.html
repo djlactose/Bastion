@@ -13,7 +13,12 @@
                 <label for="bastion">Bastion Servers</label>
                 <div id="bastion-list">
                     {% for bastion in bastion %}
-                        <input type="text" class="form-control mb-2" name="bastion" value="{{ bastion }}">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="bastion" value="{{ bastion }}">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger" onclick="removeEntry(this)">Remove</button>
+                            </div>
+                        </div>
                     {% endfor %}
                 </div>
                 <button type="button" class="btn btn-secondary" onclick="addBastion()">Add Bastion</button>
@@ -40,6 +45,7 @@
                                 <th>IP</th>
                                 <th>Connection Type</th>
                                 <th>Machine Name</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -66,6 +72,7 @@
                                     <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
                                 </td>
                                 <td><input type="text" class="form-control" name="windows_name" value="{{ machine[1] }}"></td>
+                                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -85,6 +92,7 @@
                                 <th>IP</th>
                                 <th>Connection Type</th>
                                 <th>Machine Name</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -110,6 +118,7 @@
                                     <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
                                 </td>
                                 <td><input type="text" class="form-control" name="linux_name" value="{{ machine[1] }}"></td>
+                                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -129,6 +138,7 @@
                                 <th>IP</th>
                                 <th>Connection Type</th>
                                 <th>Machine Name</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -154,6 +164,7 @@
                                     <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
                                 </td>
                                 <td><input type="text" class="form-control" name="other_name" value="{{ machine[1] }}"></td>
+                                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -169,11 +180,13 @@
 
 <script>
     function addBastion() {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.name = 'bastion';
-        input.classList.add('form-control', 'mb-2');
-        document.getElementById('bastion-list').appendChild(input);
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = '<input type="text" class="form-control" name="bastion">' +
+                        '<div class="input-group-append">' +
+                        '<button type="button" class="btn btn-danger" onclick="removeEntry(this)">Remove</button>' +
+                        '</div>';
+        document.getElementById('bastion-list').appendChild(div);
     }
 
     function addWindowsMachine() {
@@ -199,7 +212,8 @@
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="windows_other_connection" style="display:none;">' +
                         '</td>' +
-                        '<td><input type="text" class="form-control" name="windows_name"></td>';
+                        '<td><input type="text" class="form-control" name="windows_name"></td>' +
+                        '<td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>';
     }
 
     function addLinuxMachine() {
@@ -224,7 +238,8 @@
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="linux_other_connection" style="display:none;">' +
                         '</td>' +
-                        '<td><input type="text" class="form-control" name="linux_name"></td>';
+                        '<td><input type="text" class="form-control" name="linux_name"></td>' +
+                        '<td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>';
     }
 
     function addOtherMachine() {
@@ -249,7 +264,8 @@
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="other_other_connection" style="display:none;">' +
                         '</td>' +
-                        '<td><input type="text" class="form-control" name="other_name"></td>';
+                        '<td><input type="text" class="form-control" name="other_name"></td>' +
+                        '<td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>';
     }
 
     function toggleOtherConnection(selectElement) {
@@ -260,6 +276,14 @@
             otherConnectionInput.style.display = 'none';
             otherConnectionInput.value = '';
         }
+    }
+
+    function removeEntry(button) {
+        button.closest('.input-group').remove();
+    }
+
+    function removeRow(button) {
+        button.closest('tr').remove();
     }
 </script>
 {% endblock %}

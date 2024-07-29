@@ -1,8 +1,7 @@
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-
 import os
 
 app = Flask(__name__)
@@ -51,15 +50,15 @@ def parse_config(file_path):
                 elif line.startswith('windowsMachines='):
                     content = line.split('=')[1].strip('()')
                     items = content.split('" "')
-                    config['windowsMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2)]
+                    config['windowsMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2) if i+1 < len(items)]
                 elif line.startswith('linuxMachines='):
                     content = line.split('=')[1].strip('()')
                     items = content.split('" "')
-                    config['linuxMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2)]
+                    config['linuxMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2) if i+1 < len(items)]
                 elif line.startswith('otherMachines='):
                     content = line.split('=')[1].strip('()')
                     items = content.split('" "')
-                    config['otherMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2)]
+                    config['otherMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2) if i+1 < len(items)]
     
     return config
 
