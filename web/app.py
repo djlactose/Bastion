@@ -148,6 +148,7 @@ name="{name}"
 # X = SOCKS Proxy - port 5222
 # Y = Shutdown WSL
 # Z = Wazuh Port - port 5601
+# B = Bastion Web Admin - port 8000
 # # = Any number will forward that port
 ############################################
 #Windows Machines List

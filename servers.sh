@@ -183,6 +183,18 @@ openWeb(){
 
 doConnection(){
   case $1 in
+    B) #Bastion Web Admin
+    #Connect and open the bastion host web admin
+      if [ $multiCon -eq 0 ]
+      then
+        openWeb http://localhost:8000
+        ssh $bastion -p $base_port -tL 8000:localhost:8000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` $name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` $2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8000 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+      else
+        openWeb http://localhost:8000
+        nohup ssh $bastion -p $base_port -NL 8000:localhost:8000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
+        echo $! > .$(echo $port)-servers.pid
+      fi
+    ;;
     W) #Windows Machines
       ssh $bastion -p $base_port -fL $port:$2:3389 sleep 30  #creates a ssh session forwarding the ports and has a sleep at the end after the person disconnects it automatically closes out the session
       if [ $(ps -ef|grep -c "ssh $bastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ] #check to make sure the ssh session is started before continuing
@@ -384,6 +396,7 @@ ${osMenu[@]} \
 
 showMenu(){
 #Generate menu
+#B = Portainer Port - port 8000
 #D = Portainer Port - port 9000
 #H = Website Ports - ports 8080, 8443
 #J - Java Web Ports - ports 8443

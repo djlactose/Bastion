@@ -67,9 +67,10 @@
                                         <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
                                         <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
                                         <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
-                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}selected{% endif %}>Other</option>
+                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
+                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
                                     </select>
-                                    <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
+                                    <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
                                 </td>
                                 <td><input type="text" class="form-control" name="windows_name" value="{{ machine[1] }}"></td>
                                 <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
@@ -113,9 +114,10 @@
                                         <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
                                         <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
                                         <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
-                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}selected{% endif %}>Other</option>
+                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
+                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
                                     </select>
-                                    <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
+                                    <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
                                 </td>
                                 <td><input type="text" class="form-control" name="linux_name" value="{{ machine[1] }}"></td>
                                 <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
@@ -159,9 +161,10 @@
                                         <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
                                         <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
                                         <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
-                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}selected{% endif %}>Other</option>
+                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
+                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
                                     </select>
-                                    <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
+                                    <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
                                 </td>
                                 <td><input type="text" class="form-control" name="other_name" value="{{ machine[1] }}"></td>
                                 <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
@@ -208,6 +211,7 @@
                                 '<option value="X">SOCKS Proxy - port 5222</option>' +
                                 '<option value="Y">Shutdown WSL</option>' +
                                 '<option value="Z">Wazuh Port - port 5601</option>' +
+                                '<option value="B">Bastion Web Admin - port 8000</option>' +
                                 '<option value="Other">Other</option>' +
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="windows_other_connection" style="display:none;">' +
@@ -234,6 +238,7 @@
                                 '<option value="X">SOCKS Proxy - port 5222</option>' +
                                 '<option value="Y">Shutdown WSL</option>' +
                                 '<option value="Z">Wazuh Port - port 5601</option>' +
+                                '<option value="B">Bastion Web Admin - port 8000</option>' +
                                 '<option value="Other">Other</option>' +
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="linux_other_connection" style="display:none;">' +
@@ -260,6 +265,7 @@
                                 '<option value="X">SOCKS Proxy - port 5222</option>' +
                                 '<option value="Y">Shutdown WSL</option>' +
                                 '<option value="Z">Wazuh Port - port 5601</option>' +
+                                '<option value="B">Bastion Web Admin - port 8000</option>' +
                                 '<option value="Other">Other</option>' +
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="other_other_connection" style="display:none;">' +
