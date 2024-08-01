@@ -11,7 +11,7 @@ VOLUME /root/bastion
 VOLUME /etc/bastion
 VOLUME /root/web/instance
 
-HEALTHCHECK CMD exit $(nc -q 0 -w 1 localhost 22|grep -c "SSH")
+HEALTHCHECK CMD if [ $(nc -q 0 -w 1 localhost 22|grep -c "SSH") -gt 0 ]; then echo 0;else echo 1;fi || exit
 
 COPY config/sshd_config /etc/ssh/sshd_config
 COPY config/sshd /etc/pam.d/sshd
