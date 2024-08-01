@@ -34,7 +34,8 @@ COPY web/app.py /root/web/app.py
 COPY web/wsgi.py /root/web/wsgi.py
 
 RUN apt update && \
-apt install -y -o Dpkg::Options::="--force-confold" python3-flask-login python3-flask-sqlalchemy python3-flask python3-gunicorn gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode && \
+apt upgrade -y && \
+apt install -y -o Dpkg::Options::="--force-confold" python3-flask-login python3-flask-sqlalchemy python3-flask python3-gunicorn gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/adduser.sh && \

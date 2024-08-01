@@ -12,9 +12,12 @@ else
   ssh-keygen -f /etc/ssh/ssh_host_ecdsa_key -N '' -t ecdsa
   ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -N '' -t ed25519
   cp /etc/ssh/ssh_host_rsa_key /root/bastion
+  cp /etc/ssh/ssh_host_rsa_key.pub /root/bastion
   cp /etc/ssh/ssh_host_dsa_key /root/bastion
   cp /etc/ssh/ssh_host_ecdsa_key /root/bastion
+  cp /etc/ssh/ssh_host_ecdsa_key.pub /root/bastion
   cp /etc/ssh/ssh_host_ed25519_key /root/bastion
+  cp /etc/ssh/ssh_host_ed25519_key.pub /root/bastion
   cp /root/bin/servers.sh /etc/bastion/
   cp /root/bin/servers.conf-sample /etc/bastion/
   cp /root/bin/servers.conf-sample /etc/bastion/servers.conf
