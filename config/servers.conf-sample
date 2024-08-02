@@ -34,5 +34,5 @@ windowsMachines=()
 #Linux Machines List
 linuxMachines=("127.0.0.1_M" "Bastion Host")
 #Port Forward Machines List
-otherMachines=("127.0.0.1_B" "Bastion Web Admin")
+otherMachines=("127.0.0.1_B" "Bastion Web Admin" "127.0.0.1_Y" "Shutdown WSL")
 ############################################
