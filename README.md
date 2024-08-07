@@ -13,4 +13,5 @@ To keep all generated accounts you need to create the two following volumes:
 
 ## Ports
 
+* 22 - This is the port people will connect through
 * 8000 - **BETA* If you want to make the web interface publically accessible you should open this port.  You can still access the bastion host without making this accessible.
