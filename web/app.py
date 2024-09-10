@@ -175,9 +175,13 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
+
         if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect(url_for('index'))
+            if user.is_admin:
+                login_user(user)
+                return redirect(url_for('index'))
+            else:
+                flash('Access denied: Only administrators can sign in.', 'danger')
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html')

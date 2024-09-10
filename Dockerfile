@@ -4,8 +4,6 @@ FROM ubuntu:24.10
 EXPOSE 22
 EXPOSE 8000
 
-ENV dns=9.9.9.9
-
 VOLUME /home
 VOLUME /root/bastion
 VOLUME /etc/bastion
@@ -15,6 +13,7 @@ HEALTHCHECK CMD if [ $(nc -q 0 -w 1 localhost 22|grep -c "SSH") -gt 0 ]; then ec
 
 COPY config/sshd_config /etc/ssh/sshd_config
 COPY config/sshd /etc/pam.d/sshd
+COPY config/bastion-app-sudo /etc/sudoers.d/bastion-app-sudo
 COPY utils/RestoreUsers.sh /root/bin/RestoreUsers.sh
 COPY utils/BackupUsers.sh /root/bin/BackupUsers.sh
 COPY utils/upgrade.sh /root/bin/upgrade.sh
@@ -35,7 +34,7 @@ COPY web/wsgi.py /root/web/wsgi.py
 
 RUN apt update && \
 apt upgrade -y && \
-apt install -y -o Dpkg::Options::="--force-confold" python3-flask-login python3-flask-sqlalchemy python3-flask python3-gunicorn gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd && \
+apt install -y -o Dpkg::Options::="--force-confold" python3-jinja2 python3-cryptography python3-flask-login python3-flask-sqlalchemy python3-flask python3-gunicorn gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/adduser.sh && \
@@ -50,4 +49,4 @@ rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root/bin
 
-ENTRYPOINT /root/bin/run.sh
+ENTRYPOINT ["/root/bin/run.sh"]
