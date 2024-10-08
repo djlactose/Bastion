@@ -8,14 +8,21 @@
         Add User
     </div>
     <div class="card-body">
-        <form method="POST">
+        <form method="POST" onsubmit="return validatePasswords()">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" class="form-control" name="username" placeholder="Username" required>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" class="form-control" name="password" placeholder="Password" required>
+                <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required>
+            </div>
+            <div id="error-message" style="color: red; display: none;">
+                Passwords do not match!
             </div>
             <div class="form-check">
                 <input type="checkbox" class="form-check-input" name="is_admin" id="is_admin">
@@ -26,4 +33,16 @@
         <a href="{{ url_for('list_users') }}" class="btn btn-secondary mt-2">Back to User List</a>
     </div>
 </div>
+
+<script>
+function validatePasswords() {
+    var password = document.getElementById("password").value;
+    var confirmPassword = document.getElementById("confirm_password").value;
+    if (password !== confirmPassword) {
+        document.getElementById("error-message").style.display = "block";
+        return false;
+    }
+    return true;
+}
+</script>
 {% endblock %}
