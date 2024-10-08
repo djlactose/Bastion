@@ -57,7 +57,20 @@
                                 <td><input type="text" class="form-control" name="windows_ip" value="{{ machine[0].split('_')[0] }}"></td>
                                 <td>
                                     <select class="form-control" name="windows_connection" onchange="toggleOtherConnection(this)">
+                                        <option value="D" {% if machine[0].split('_')[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
+                                        <option value="H" {% if machine[0].split('_')[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
+                                        <option value="J" {% if machine[0].split('_')[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
+                                        <option value="L" {% if machine[0].split('_')[1] == 'L' %}selected{% endif %}>Linux ssh - port 22</option>
+                                        <option value="M" {% if machine[0].split('_')[1] == 'M' %}selected{% endif %}>Bastion Host ssh - port from base_port</option>
+                                        <option value="N" {% if machine[0].split('_')[1] == 'N' %}selected{% endif %}>Nessus Port - ports 8834, 8000</option>
+                                        <option value="P" {% if machine[0].split('_')[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
                                         <option value="W" {% if machine[0].split('_')[1] == 'W' %}selected{% endif %}>Windows RDP - port 3389</option>
+                                        <option value="S" {% if machine[0].split('_')[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
+                                        <option value="T" {% if machine[0].split('_')[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
+                                        <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
+                                        <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
+                                        <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
+                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
                                         <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
                                     </select>
                                     <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
@@ -95,7 +108,20 @@
                                 <td><input type="text" class="form-control" name="linux_ip" value="{{ machine[0].split('_')[0] }}"></td>
                                 <td>
                                     <select class="form-control" name="linux_connection" onchange="toggleOtherConnection(this)">
+                                        <option value="D" {% if machine[0].split('_')[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
+                                        <option value="H" {% if machine[0].split('_')[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
+                                        <option value="J" {% if machine[0].split('_')[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
                                         <option value="L" {% if machine[0].split('_')[1] == 'L' %}selected{% endif %}>Linux ssh - port 22</option>
+                                        <option value="M" {% if machine[0].split('_')[1] == 'M' %}selected{% endif %}>Bastion Host ssh - port from base_port</option>
+                                        <option value="N" {% if machine[0].split('_')[1] == 'N' %}selected{% endif %}>Nessus Port - ports 8834, 8000</option>
+                                        <option value="P" {% if machine[0].split('_')[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
+                                        <option value="W" {% if machine[0].split('_')[1] == 'W' %}selected{% endif %}>Windows RDP - port 3389</option>
+                                        <option value="S" {% if machine[0].split('_')[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
+                                        <option value="T" {% if machine[0].split('_')[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
+                                        <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
+                                        <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
+                                        <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
+                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
                                         <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
                                     </select>
                                     <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
@@ -133,7 +159,20 @@
                                 <td><input type="text" class="form-control" name="other_ip" value="{{ machine[0].split('_')[0] }}"></td>
                                 <td>
                                     <select class="form-control" name="other_connection" onchange="toggleOtherConnection(this)">
+                                        <option value="D" {% if machine[0].split('_')[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
+                                        <option value="H" {% if machine[0].split('_')[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
+                                        <option value="J" {% if machine[0].split('_')[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
+                                        <option value="L" {% if machine[0].split('_')[1] == 'L' %}selected{% endif %}>Linux ssh - port 22</option>
+                                        <option value="M" {% if machine[0].split('_')[1] == 'M' %}selected{% endif %}>Bastion Host ssh - port from base_port</option>
+                                        <option value="N" {% if machine[0].split('_')[1] == 'N' %}selected{% endif %}>Nessus Port - ports 8834, 8000</option>
+                                        <option value="P" {% if machine[0].split('_')[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
+                                        <option value="W" {% if machine[0].split('_')[1] == 'W' %}selected{% endif %}>Windows RDP - port 3389</option>
                                         <option value="S" {% if machine[0].split('_')[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
+                                        <option value="T" {% if machine[0].split('_')[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
+                                        <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
+                                        <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
+                                        <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
+                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
                                         <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
                                     </select>
                                     <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
@@ -202,7 +241,20 @@
                         '<td><input type="text" class="form-control" name="windows_ip"></td>' +
                         '<td>' +
                             '<select class="form-control" name="windows_connection" onchange="toggleOtherConnection(this)">' +
+                                '<option value="D">Portainer Port - port 9000</option>' +
+                                '<option value="H">Website Ports - ports 8080, 8443</option>' +
+                                '<option value="J">Java Web Ports - ports 8443</option>' +
+                                '<option value="L">Linux ssh - port 22</option>' +
+                                '<option value="M">Bastion Host ssh - port from base_port</option>' +
+                                '<option value="N">Nessus Port - ports 8834, 8000</option>' +
+                                '<option value="P">Publish using MSDeploy - port 8172</option>' +
                                 '<option value="W">Windows RDP - port 3389</option>' +
+                                '<option value="S">SQL Server - port 1433</option>' +
+                                '<option value="T">Sysadmin Toolbox</option>' +
+                                '<option value="X">SOCKS Proxy - port 5222</option>' +
+                                '<option value="Y">Shutdown WSL</option>' +
+                                '<option value="Z">Wazuh Port - port 5601</option>' +
+                                '<option value="B">Bastion Web Admin - port 8000</option>' +
                                 '<option value="Other">Other</option>' +
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="windows_other_connection" style="display:none;">' +
@@ -222,7 +274,20 @@
                         '<td><input type="text" class="form-control" name="linux_ip"></td>' +
                         '<td>' +
                             '<select class="form-control" name="linux_connection" onchange="toggleOtherConnection(this)">' +
+                                '<option value="D">Portainer Port - port 9000</option>' +
+                                '<option value="H">Website Ports - ports 8080, 8443</option>' +
+                                '<option value="J">Java Web Ports - ports 8443</option>' +
                                 '<option value="L">Linux ssh - port 22</option>' +
+                                '<option value="M">Bastion Host ssh - port from base_port</option>' +
+                                '<option value="N">Nessus Port - ports 8834, 8000</option>' +
+                                '<option value="P">Publish using MSDeploy - port 8172</option>' +
+                                '<option value="W">Windows RDP - port 3389</option>' +
+                                '<option value="S">SQL Server - port 1433</option>' +
+                                '<option value="T">Sysadmin Toolbox</option>' +
+                                '<option value="X">SOCKS Proxy - port 5222</option>' +
+                                '<option value="Y">Shutdown WSL</option>' +
+                                '<option value="Z">Wazuh Port - port 5601</option>' +
+                                '<option value="B">Bastion Web Admin - port 8000</option>' +
                                 '<option value="Other">Other</option>' +
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="linux_other_connection" style="display:none;">' +
@@ -242,7 +307,20 @@
                         '<td><input type="text" class="form-control" name="other_ip"></td>' +
                         '<td>' +
                             '<select class="form-control" name="other_connection" onchange="toggleOtherConnection(this)">' +
+                                '<option value="D">Portainer Port - port 9000</option>' +
+                                '<option value="H">Website Ports - ports 8080, 8443</option>' +
+                                '<option value="J">Java Web Ports - ports 8443</option>' +
+                                '<option value="L">Linux ssh - port 22</option>' +
+                                '<option value="M">Bastion Host ssh - port from base_port</option>' +
+                                '<option value="N">Nessus Port - ports 8834, 8000</option>' +
+                                '<option value="P">Publish using MSDeploy - port 8172</option>' +
+                                '<option value="W">Windows RDP - port 3389</option>' +
                                 '<option value="S">SQL Server - port 1433</option>' +
+                                '<option value="T">Sysadmin Toolbox</option>' +
+                                '<option value="X">SOCKS Proxy - port 5222</option>' +
+                                '<option value="Y">Shutdown WSL</option>' +
+                                '<option value="Z">Wazuh Port - port 5601</option>' +
+                                '<option value="B">Bastion Web Admin - port 8000</option>' +
                                 '<option value="Other">Other</option>' +
                             '</select>' +
                             '<input type="text" class="form-control mt-2" name="other_other_connection" style="display:none;">' +
