@@ -201,6 +201,7 @@ doConnection(){
       then
         if [ $multiCon -eq 0 ]
         then
+                clear
                 echo The Bastion server name is `tput setaf 2`$name `tput sgr0` 
                 echo The Bastion Host is `tput setaf 2`$bastion `tput sgr0` 
                 echo Connected to `tput setaf 2`$2 `tput sgr0`
