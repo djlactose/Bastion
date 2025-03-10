@@ -105,30 +105,46 @@ cleanUp(){
   ls -a |grep servers.pid | xargs -I xxx rm xxx
 }
 
+customFile(){
+  customFile=$(echo $0|rev|cut -c 4-|rev).cust
+  if [ -f "$customFile" ]
+  then
+    . $customFile
+  else
+    read -p "Enter remote user (Press enter for current user): " remote_user
+    remote_user=${remote_user:-`whoami`}
+    echo remote_user=$remote_user > $customFile
+  fi
+  echo $bastion
+  bastion=$remote_user@$bastion
+  echo $bastion
+}
+
 settingsFile=$(echo $0|rev|cut -c 4-|rev).conf
 if [ -f "$settingsFile" ]
 then
   . $settingsFile
-    bastions=("${bastion[@]}")
-    bastion=${bastions[$RANDOM % ${#bastions[@]} ]} #Randomly select host if there is more than one
-    if [ -z "$base_port" ]
-    then
-	    base_port="22"
-    fi
-    basTest=`nc -q 0 -w 1 "$bastion" "$base_port" < /dev/null`
-    count=0
-    while [ -z "$basTest" ]
-    do
-	echo "$bastion is down trying another random host from the list."
-	bastion=${bastions[$RANDOM % ${#bastions[@]} ]} #Randomly select host if there is more than one
-	basTest=`nc -q 0 -w 1 "$bastion" "$base_port" < /dev/null`
-	((count++))
-	if [ $count -gt 5 ]
-	then
-		echo "Unable to connect to any of the hosts that were tried... Exiting"
-		exit
-	fi
-    done
+  bastions=("${bastion[@]}")
+  bastion=${bastions[$RANDOM % ${#bastions[@]} ]} #Randomly select host if there is more than one
+  customFile
+  if [ -z "$base_port" ]
+  then
+	  base_port="22"
+  fi
+  basTest=`nc -q 0 -w 1 "$bastion" "$base_port" < /dev/null`
+  count=0
+  while [ -z "$basTest" ]
+  do
+	  echo "$bastion is down trying another random host from the list."
+	  bastion=${bastions[$RANDOM % ${#bastions[@]} ]} #Randomly select host if there is more than one
+	  basTest=`nc -q 0 -w 1 "$bastion" "$base_port" < /dev/null`
+	  ((count++))
+	  if [ $count -gt 5 ]
+	  then
+		  echo "Unable to connect to any of the hosts that were tried... Exiting"
+		  exit
+	  fi
+  done
 else
   echo "Enter in the server address of the bastion host:"
   read bastion
@@ -137,6 +153,7 @@ else
   echo "Enter in the server port of the bastion host:"
   read base_port
   echo base_port=$base_port >> $settingsFile
+  customFile
   checkConfUpdate
   checkAppUpdate
   exit
@@ -476,6 +493,7 @@ done
 ###################################################
 
 depCheck
+customFile
 exitstatus=0
 while [  $exitstatus -eq 0 ]; do
   OSMenu $depRDP
