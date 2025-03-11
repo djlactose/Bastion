@@ -67,7 +67,7 @@ checkConfUpdate(){
   bastions=("${bastion[@]}")
   bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   #Download config from bastion host to tmp directory
-  confFile=$(echo $0|rev|cut -c 4-|rev).conf
+  confFile=$settingsFile
   confmd5=`md5sum $confFile |cut -d " " -f 1`
   scp -P $base_port $remote_user@$bastion:$upConfPath /tmp/
   #has file
@@ -106,7 +106,12 @@ cleanUp(){
 }
 
 customFile(){
-  customFile=$(echo $0|rev|cut -c 4-|rev).cust
+  oldCustomFile=$(echo $0|cut -c 3-|rev|cut -c 4-|rev).cust
+  if [ -f "$oldCustomFile" ]
+  then
+    mv $oldCustomFile .$oldCustomFile
+  fi
+  customFile=./.$(echo $0|cut -c 3-|rev|cut -c 4-|rev).cust
   if [ -f "$customFile" ]
   then
     . $customFile
@@ -117,7 +122,13 @@ customFile(){
   fi
 }
 
-settingsFile=$(echo $0|rev|cut -c 4-|rev).conf
+oldSettingsFile=$(echo $0|cut -c 3-|rev|cut -c 4-|rev).conf
+if [ -f "$oldSettingsFile" ]
+then
+  mv $oldSettingsFile .$oldSettingsFile
+fi
+
+settingsFile=./.$(echo $0|cut -c 3-|rev|cut -c 4-|rev).conf
 if [ -f "$settingsFile" ]
 then
   . $settingsFile
