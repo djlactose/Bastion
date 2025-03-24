@@ -34,7 +34,10 @@ COPY web/wsgi.py /root/web/wsgi.py
 
 RUN apt update && \
 apt upgrade -y && \
-apt install -y -o Dpkg::Options::="--force-confold" python3-jinja2 python3-cryptography python3-flask-login python3-flask-sqlalchemy python3-flask python3-gunicorn gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd && \
+apt install -y -o Dpkg::Options::="--force-confold" python3-venv gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd && \
+python3 -m venv /opt/venv && \
+export PATH="/opt/venv/bin:$PATH" && \
+pip install jinja2 cryptography flask-login flask-sqlalchemy flask gunicorn && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/adduser.sh && \
