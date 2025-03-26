@@ -24,5 +24,6 @@ else
 fi
 cp /root/bin/servers.sh /etc/bastion/
 cp /root/bin/servers.conf-sample /etc/bastion/
+export PATH="/opt/venv/bin:$PATH"
 gunicorn -w 2 -b 0.0.0.0:8000 --daemon --chdir /root/web/ wsgi:app
 /usr/sbin/sshd -f /etc/ssh/sshd_config -D -e

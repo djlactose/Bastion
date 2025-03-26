@@ -38,7 +38,7 @@ apt install -y -o Dpkg::Options::="--force-confold" python3-venv gunicorn openss
 python3 -m venv /opt/venv && \
 export PATH="/opt/venv/bin:$PATH" && \
 pip3 install -U pip && \
-pip install jinja2 cryptography flask-login flask-sqlalchemy flask gunicorn && \
+pip3 install jinja2 cryptography flask-login flask-sqlalchemy flask gunicorn && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/adduser.sh && \
