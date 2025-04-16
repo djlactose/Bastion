@@ -95,7 +95,7 @@ X11Forwarding yes
 PrintMotd no
 #PrintLastLog yes
 TCPKeepAlive yes
-#PermitUserEnvironment no
+PermitUserEnvironment no
 #Compression delayed
 ClientAliveInterval 60
 ClientAliveCountMax 3
@@ -108,6 +108,7 @@ UseDNS yes
 
 # no default banner path
 #Banner none
+DebianBanner no
 
 # Allow client to pass locale environment variables
 AcceptEnv LANG LC_*
