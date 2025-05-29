@@ -142,13 +142,21 @@ customFile(){
   if [ -f "$customFile" ]; then
     # If it exists, source it to load variables like remote_user.
     . $customFile
-  else
-    # Otherwise, prompt the user for the remote username.
-    read -p "Enter remote user (Press enter for current user): " remote_user
+  fi
+  if [[ ! -v remote_user ]]; then
+    # Otherwise, prompt the user for the remote linux username.
+    read -p "Enter remote linux user (Press enter for current user): " remote_user
     remote_user=${remote_user:-`whoami`}
     # Save the input to the custom file.
-    echo remote_user=$remote_user > $customFile
-  fi
+    echo remote_user=$remote_user >> $customFile 
+  fi   
+  if [[ ! -v remotew_user ]]; then
+    # Otherwise, prompt the user for the remote windows username.
+    read -p "Enter remote windows user: " remotew_user
+    remotew_user=${remotew_user:-`whoami`}
+    # Save the input to the custom file.
+    echo remotew_user=$remotew_user >> $customFile 
+  fi   
 }
 
 # Handle legacy settings file names by renaming old configuration files.
