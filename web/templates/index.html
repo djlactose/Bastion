@@ -33,7 +33,7 @@
                 <input type="text" class="form-control" name="name" id="name" value="{{ name }}" placeholder="Display name for this bastion" required>
             </div>
 
-            {% macro machine_section(label, id_prefix, machines) %}
+            {% macro machine_section(label, id_prefix, machines, connection_types, known_codes) %}
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#{{ id_prefix }}Collapse" aria-expanded="{{ 'true' if not machines else 'false' }}">
                     <span>
@@ -89,9 +89,9 @@
             </div>
             {% endmacro %}
 
-            {{ machine_section("Windows Machines", "windows", windowsMachines) }}
-            {{ machine_section("Linux Machines", "linux", linuxMachines) }}
-            {{ machine_section("Other Machines", "other", otherMachines) }}
+            {{ machine_section("Windows Machines", "windows", windowsMachines, connection_types, known_codes) }}
+            {{ machine_section("Linux Machines", "linux", linuxMachines, connection_types, known_codes) }}
+            {{ machine_section("Other Machines", "other", otherMachines, connection_types, known_codes) }}
 
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary" id="saveBtn">

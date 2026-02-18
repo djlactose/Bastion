@@ -279,6 +279,10 @@ def setup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        confirm_pw = request.form.get('confirm_password', '')
+        if password != confirm_pw:
+            flash('Passwords do not match.', 'danger')
+            return render_template('setup.html')
         # Fix #10: Check for duplicate username
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
@@ -302,6 +306,10 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        confirm_pw = request.form.get('confirm_password', '')
+        if password != confirm_pw:
+            flash('Passwords do not match.', 'danger')
+            return render_template('register.html')
         # Fix #10: Check for duplicate username
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
@@ -332,8 +340,15 @@ def change_password():
     if request.method == 'POST':
         current_pw = request.form['current_password']
         new_pw = request.form['password']
+        confirm_pw = request.form.get('confirm_password', '')
         if not check_password_hash(current_user.password, current_pw):
             flash('Current password is incorrect.', 'danger')
+            return render_template('change_password.html')
+        if new_pw != confirm_pw:
+            flash('New passwords do not match.', 'danger')
+            return render_template('change_password.html')
+        if not new_pw:
+            flash('New password cannot be empty.', 'danger')
             return render_template('change_password.html')
         current_user.password = generate_password_hash(new_pw, method='pbkdf2:sha256')
         db.session.commit()
@@ -360,6 +375,10 @@ def add_user():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        confirm_pw = request.form.get('confirm_password', '')
+        if password != confirm_pw:
+            flash('Passwords do not match.', 'danger')
+            return render_template('add_user.html')
         # Fix #10: Check for duplicate username
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
@@ -389,6 +408,10 @@ def edit_user(id):
             return render_template('edit_user.html', user=user)
         user.username = new_username
         if request.form['password']:
+            confirm_pw = request.form.get('confirm_password', '')
+            if request.form['password'] != confirm_pw:
+                flash('Passwords do not match.', 'danger')
+                return render_template('edit_user.html', user=user)
             user.password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
         new_is_admin = 'is_admin' in request.form
         if user.is_admin and not new_is_admin and User.query.filter_by(is_admin=True).count() <= 1:
