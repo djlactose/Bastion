@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Add System User{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        Add System User (SSH)
+    </div>
+    <div class="card-body">
+        <form method="POST" onsubmit="return validatePasswords()">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" name="username" id="username" placeholder="Username" pattern="[a-z_][a-z0-9_-]*" required>
+                <div class="form-text">Lowercase letters, digits, hyphens, and underscores only.</div>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                <div class="form-text">Minimum 12 characters with uppercase, lowercase, digit, and special character.</div>
+            </div>
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required>
+            </div>
+            <div id="error-message" class="text-danger mb-3" style="display: none;">
+                Passwords do not match!
+            </div>
+            <button type="submit" class="btn btn-primary">Create System User</button>
+        </form>
+        <a href="{{ url_for('list_system_users') }}" class="btn btn-secondary mt-2">Back to System Users</a>
+    </div>
+</div>
+{% endblock %}

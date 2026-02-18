@@ -3,9 +3,16 @@ from flask import Flask, request, render_template, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 import re
+import json
+import subprocess
+import logging
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 
@@ -21,7 +28,15 @@ else:
         f.write(generated_key)
     app.config['SECRET_KEY'] = generated_key
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# Database: use persistent volume, auto-migrate from old location
+new_db_path = '/root/bastion/users.db'
+old_db_path = os.path.join(app.instance_path, 'users.db')
+if os.path.exists(old_db_path) and not os.path.exists(new_db_path):
+    import shutil
+    os.makedirs(os.path.dirname(new_db_path), exist_ok=True)
+    shutil.copy2(old_db_path, new_db_path)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////root/bastion/users.db'
 app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30 minute session timeout
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -29,6 +44,43 @@ login_manager.login_view = 'login'
 
 # Fix #3: CSRF protection
 csrf = CSRFProtect(app)
+
+# ProxyFix for nginx reverse proxy (safe no-op without nginx)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+# Secure cookie settings
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Rate limiting
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+# Audit logging
+audit_log_dir = '/var/log/bastion'
+os.makedirs(audit_log_dir, exist_ok=True)
+audit_logger = logging.getLogger('bastion.audit')
+audit_logger.setLevel(logging.INFO)
+audit_handler = RotatingFileHandler(
+    os.path.join(audit_log_dir, 'audit.log'),
+    maxBytes=5 * 1024 * 1024,
+    backupCount=5
+)
+audit_handler.setFormatter(logging.Formatter(
+    '%(asctime)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+))
+audit_logger.addHandler(audit_handler)
+
+def audit_log(action, details=''):
+    """Log an admin action with the current user context."""
+    user = current_user.username if current_user.is_authenticated else 'anonymous'
+    ip = request.remote_addr or 'unknown'
+    audit_logger.info(f'user={user} ip={ip} action={action} {details}'.strip())
 
 # User model
 class User(UserMixin, db.Model):
@@ -41,8 +93,9 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Configuration file path
+# Configuration file paths
 config_file = '/etc/bastion/servers.conf'
+config_file_json = '/etc/bastion/servers.json'
 
 # Fix #4: Input sanitization for shell-safe values
 def sanitize_shell_input(value):
@@ -60,6 +113,24 @@ def validate_ip_or_hostname(value):
 def validate_port(value):
     """Validate that value is a numeric port."""
     return value.isdigit() and 1 <= int(value) <= 65535
+
+def validate_password(password):
+    """Enforce password complexity requirements."""
+    if len(password) < 12:
+        return False, 'Password must be at least 12 characters long.'
+    if not re.search(r'[A-Z]', password):
+        return False, 'Password must contain at least one uppercase letter.'
+    if not re.search(r'[a-z]', password):
+        return False, 'Password must contain at least one lowercase letter.'
+    if not re.search(r'[0-9]', password):
+        return False, 'Password must contain at least one digit.'
+    if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:,.<>?/\\|`~]', password):
+        return False, 'Password must contain at least one special character.'
+    return True, ''
+
+def validate_system_username(username):
+    """Validate Linux username format."""
+    return re.match(r'^[a-z_][a-z0-9_-]{0,31}$', username) is not None
 
 # Connection types for the web UI dropdowns
 CONNECTION_TYPES = [
@@ -90,6 +161,25 @@ def parse_config(file_path):
         'otherMachines': []
     }
 
+    # Try JSON first
+    if os.path.exists(config_file_json):
+        try:
+            with open(config_file_json, 'r') as f:
+                data = json.load(f)
+            config['bastion'] = data.get('bastion', [])
+            config['base_port'] = data.get('base_port', 22)
+            config['name'] = data.get('name', '')
+            for category in ('windowsMachines', 'linuxMachines', 'otherMachines'):
+                machines = data.get(category, [])
+                config[category] = [
+                    (f"{m['ip']}_{m['connection']}", m['name'])
+                    for m in machines
+                ]
+            return config
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Fall back to legacy bash format
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
             lines = file.readlines()
@@ -118,9 +208,65 @@ def parse_config(file_path):
 
     return config
 
+def write_json_config(bastion, base_port, name, windows_machines, linux_machines, other_machines):
+    """Write JSON config file alongside the legacy .conf."""
+    def parse_machine_entries(machine_strs):
+        machines = []
+        for entry in machine_strs:
+            # entries are like '"192.168.1.10_W" "PC One"'
+            parts = entry.strip('"').split('" "')
+            if len(parts) == 2:
+                ip_conn = parts[0]
+                mname = parts[1]
+                underscore_idx = ip_conn.rfind('_')
+                if underscore_idx > 0:
+                    machines.append({
+                        'ip': ip_conn[:underscore_idx],
+                        'connection': ip_conn[underscore_idx+1:],
+                        'name': mname
+                    })
+        return machines
+
+    config_data = {
+        'bastion': bastion,
+        'base_port': int(base_port),
+        'name': name,
+        'windowsMachines': parse_machine_entries(windows_machines),
+        'linuxMachines': parse_machine_entries(linux_machines),
+        'otherMachines': parse_machine_entries(other_machines)
+    }
+
+    with open(config_file_json, 'w') as f:
+        json.dump(config_data, f, indent=4)
+
+def migrate_conf_to_json():
+    """One-time migration from legacy .conf to .json format."""
+    if os.path.exists(config_file) and not os.path.exists(config_file_json):
+        config = parse_config(config_file)
+        config_data = {
+            'bastion': config['bastion'],
+            'base_port': int(config['base_port']) if isinstance(config['base_port'], str) else config['base_port'],
+            'name': config['name'],
+        }
+        for category in ('windowsMachines', 'linuxMachines', 'otherMachines'):
+            config_data[category] = []
+            for m in config[category]:
+                underscore_idx = m[0].rfind('_')
+                if underscore_idx > 0:
+                    config_data[category].append({
+                        'ip': m[0][:underscore_idx],
+                        'connection': m[0][underscore_idx+1:],
+                        'name': m[1]
+                    })
+        with open(config_file_json, 'w') as f:
+            json.dump(config_data, f, indent=4)
+
 # Fix #2: Initialize database once at startup instead of every request
 with app.app_context():
     db.create_all()
+
+# Auto-migrate legacy .conf to .json on startup
+migrate_conf_to_json()
 
 @app.route('/')
 @login_required
@@ -248,10 +394,15 @@ name="{name}"
     with open(config_file, 'w') as file:
         file.write(config_content)
 
+    # Also write JSON config for structured access
+    write_json_config(bastion, base_port, name, windows_machines, linux_machines, other_machines)
+
+    audit_log('CONFIG_UPDATED', f'bastion_hosts={len(bastion)} windows={len(windows_machines)} linux={len(linux_machines)} other={len(other_machines)}')
     flash('Configuration updated successfully!', 'success')
     return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     if not User.query.first():
         return redirect(url_for('setup'))
@@ -264,14 +415,23 @@ def login():
         if user and check_password_hash(user.password, password):
             if user.is_admin:
                 login_user(user)
+                audit_log('LOGIN_SUCCESS', f'username={username}')
                 return redirect(url_for('index'))
             else:
+                audit_log('LOGIN_DENIED_NOT_ADMIN', f'username={username}')
                 flash('Access denied: Only administrators can sign in.', 'danger')
         else:
+            audit_log('LOGIN_FAILED', f'username={username}')
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html')
 
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    flash('Too many attempts. Please wait before trying again.', 'danger')
+    return redirect(url_for('login'))
+
 @app.route('/setup', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
 def setup():
     if User.query.first():
         return redirect(url_for('login'))
@@ -283,6 +443,10 @@ def setup():
         if password != confirm_pw:
             flash('Passwords do not match.', 'danger')
             return render_template('setup.html')
+        valid, msg = validate_password(password)
+        if not valid:
+            flash(msg, 'danger')
+            return render_template('setup.html')
         # Fix #10: Check for duplicate username
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
@@ -292,6 +456,7 @@ def setup():
         user = User(username=username, password=hashed_password, is_admin=is_admin)
         db.session.add(user)
         db.session.commit()
+        audit_log('USER_CREATED', f'target_user={username} is_admin=True initial_setup=True')
         flash(f'Admin account created for {username}!', 'success')
         return redirect(url_for('login'))
     return render_template('setup.html')
@@ -310,6 +475,10 @@ def register():
         if password != confirm_pw:
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
+        valid, msg = validate_password(password)
+        if not valid:
+            flash(msg, 'danger')
+            return render_template('register.html')
         # Fix #10: Check for duplicate username
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
@@ -319,6 +488,7 @@ def register():
         user = User(username=username, password=hashed_password, is_admin=is_admin)
         db.session.add(user)
         db.session.commit()
+        audit_log('USER_CREATED', f'target_user={username} is_admin={is_admin}')
         flash(f'Account created for {username}!', 'success')
         return redirect(url_for('index'))
     return render_template('register.html')
@@ -326,6 +496,7 @@ def register():
 @app.route('/logout')
 @login_required
 def logout():
+    audit_log('LOGOUT')
     logout_user()
     return redirect(url_for('login'))
 
@@ -350,8 +521,13 @@ def change_password():
         if not new_pw:
             flash('New password cannot be empty.', 'danger')
             return render_template('change_password.html')
+        valid, msg = validate_password(new_pw)
+        if not valid:
+            flash(msg, 'danger')
+            return render_template('change_password.html')
         current_user.password = generate_password_hash(new_pw, method='pbkdf2:sha256')
         db.session.commit()
+        audit_log('PASSWORD_CHANGED')
         flash('Password changed successfully!', 'success')
         return redirect(url_for('index'))
     return render_template('change_password.html')
@@ -379,6 +555,10 @@ def add_user():
         if password != confirm_pw:
             flash('Passwords do not match.', 'danger')
             return render_template('add_user.html')
+        valid, msg = validate_password(password)
+        if not valid:
+            flash(msg, 'danger')
+            return render_template('add_user.html')
         # Fix #10: Check for duplicate username
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
@@ -388,6 +568,7 @@ def add_user():
         user = User(username=username, password=hashed_password, is_admin=is_admin)
         db.session.add(user)
         db.session.commit()
+        audit_log('USER_CREATED', f'target_user={username} is_admin={is_admin}')
         flash(f'Account created for {username}!', 'success')
         return redirect(url_for('list_users'))
     return render_template('add_user.html')
@@ -407,18 +588,25 @@ def edit_user(id):
             flash('Username already exists.', 'danger')
             return render_template('edit_user.html', user=user)
         user.username = new_username
+        password_changed = False
         if request.form['password']:
             confirm_pw = request.form.get('confirm_password', '')
             if request.form['password'] != confirm_pw:
                 flash('Passwords do not match.', 'danger')
                 return render_template('edit_user.html', user=user)
+            valid, msg = validate_password(request.form['password'])
+            if not valid:
+                flash(msg, 'danger')
+                return render_template('edit_user.html', user=user)
             user.password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
+            password_changed = True
         new_is_admin = 'is_admin' in request.form
         if user.is_admin and not new_is_admin and User.query.filter_by(is_admin=True).count() <= 1:
             flash('Cannot remove admin from the last admin account.', 'danger')
             return render_template('edit_user.html', user=user)
         user.is_admin = new_is_admin
         db.session.commit()
+        audit_log('USER_EDITED', f'target_user={user.username} is_admin={user.is_admin} password_changed={password_changed}')
         flash(f'Account updated for {user.username}!', 'success')
         return redirect(url_for('list_users'))
     return render_template('edit_user.html', user=user)
@@ -437,10 +625,174 @@ def delete_user(id):
     if user.is_admin and User.query.filter_by(is_admin=True).count() <= 1:
         flash('Cannot delete the last admin account.', 'danger')
         return redirect(url_for('list_users'))
+    audit_log('USER_DELETED', f'target_user={user.username}')
     db.session.delete(user)
     db.session.commit()
     flash(f'Account deleted for {user.username}!', 'success')
     return redirect(url_for('list_users'))
+
+# --- System User Management (SSH Users) ---
+
+def get_system_users():
+    """Read /etc/passwd and return non-system users (UID >= 1000, exclude nobody)."""
+    users = []
+    try:
+        with open('/etc/passwd', 'r') as f:
+            for line in f:
+                parts = line.strip().split(':')
+                if len(parts) >= 6:
+                    uid = int(parts[2])
+                    if uid >= 1000 and parts[0] != 'nobody':
+                        users.append({'username': parts[0], 'uid': uid, 'home': parts[5]})
+    except FileNotFoundError:
+        pass
+    return users
+
+@app.route('/system-users')
+@login_required
+def list_system_users():
+    if not current_user.is_admin:
+        flash('Only administrators can manage system users.', 'danger')
+        return redirect(url_for('index'))
+    users = get_system_users()
+    return render_template('system_users.html', users=users)
+
+@app.route('/system-users/add', methods=['GET', 'POST'])
+@login_required
+def add_system_user():
+    if not current_user.is_admin:
+        flash('Only administrators can add system users.', 'danger')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        confirm_pw = request.form.get('confirm_password', '')
+
+        if not validate_system_username(username):
+            flash('Invalid username. Use lowercase letters, digits, hyphens, and underscores only.', 'danger')
+            return render_template('add_system_user.html')
+        if password != confirm_pw:
+            flash('Passwords do not match.', 'danger')
+            return render_template('add_system_user.html')
+        valid, msg = validate_password(password)
+        if not valid:
+            flash(msg, 'danger')
+            return render_template('add_system_user.html')
+
+        # Check if user already exists
+        existing = get_system_users()
+        if any(u['username'] == username for u in existing):
+            flash(f'System user "{username}" already exists.', 'danger')
+            return render_template('add_system_user.html')
+
+        result = subprocess.run(
+            ['sudo', '/root/bin/adduser.sh', username, password],
+            capture_output=True, text=True, timeout=30
+        )
+
+        if result.returncode != 0:
+            flash(f'Failed to create system user: {result.stderr}', 'danger')
+            return render_template('add_system_user.html')
+
+        audit_log('SYSTEM_USER_CREATED', f'target_user={username}')
+        flash(f'System user "{username}" created successfully!', 'success')
+
+        # Check for QR code file
+        qr_file = f'/tmp/ga_qr_{username}.txt'
+        if os.path.exists(qr_file):
+            return redirect(url_for('system_user_qr', username=username))
+        return redirect(url_for('list_system_users'))
+
+    return render_template('add_system_user.html')
+
+@app.route('/system-users/qr/<username>')
+@login_required
+def system_user_qr(username):
+    if not current_user.is_admin:
+        flash('Only administrators can view this page.', 'danger')
+        return redirect(url_for('index'))
+
+    if not validate_system_username(username):
+        flash('Invalid username.', 'danger')
+        return redirect(url_for('list_system_users'))
+
+    qr_file = f'/tmp/ga_qr_{username}.txt'
+    qr_content = ''
+    if os.path.exists(qr_file):
+        with open(qr_file, 'r') as f:
+            qr_content = f.read()
+        os.remove(qr_file)
+
+    return render_template('system_user_qr.html', username=username, qr_content=qr_content)
+
+@app.route('/system-users/delete/<username>', methods=['POST'])
+@login_required
+def delete_system_user(username):
+    if not current_user.is_admin:
+        flash('Only administrators can delete system users.', 'danger')
+        return redirect(url_for('index'))
+
+    if not validate_system_username(username):
+        flash('Invalid username.', 'danger')
+        return redirect(url_for('list_system_users'))
+
+    result = subprocess.run(
+        ['sudo', '/root/bin/deluser.sh', username],
+        capture_output=True, text=True, timeout=30
+    )
+
+    if result.returncode != 0:
+        flash(f'Failed to delete system user: {result.stderr}', 'danger')
+    else:
+        audit_log('SYSTEM_USER_DELETED', f'target_user={username}')
+        flash(f'System user "{username}" deleted successfully!', 'success')
+
+    return redirect(url_for('list_system_users'))
+
+@app.route('/system-users/reset-password/<username>', methods=['GET', 'POST'])
+@login_required
+def reset_system_password(username):
+    if not current_user.is_admin:
+        flash('Only administrators can reset passwords.', 'danger')
+        return redirect(url_for('index'))
+
+    if not validate_system_username(username):
+        flash('Invalid username.', 'danger')
+        return redirect(url_for('list_system_users'))
+
+    # Verify user exists
+    existing = get_system_users()
+    if not any(u['username'] == username for u in existing):
+        flash(f'System user "{username}" not found.', 'danger')
+        return redirect(url_for('list_system_users'))
+
+    if request.method == 'POST':
+        password = request.form['password']
+        confirm_pw = request.form.get('confirm_password', '')
+
+        if password != confirm_pw:
+            flash('Passwords do not match.', 'danger')
+            return render_template('reset_system_password.html', username=username)
+        valid, msg = validate_password(password)
+        if not valid:
+            flash(msg, 'danger')
+            return render_template('reset_system_password.html', username=username)
+
+        result = subprocess.run(
+            ['sudo', '/root/bin/resetpw.sh', username],
+            input=password, capture_output=True, text=True, timeout=30
+        )
+
+        if result.returncode != 0:
+            flash(f'Failed to reset password: {result.stderr}', 'danger')
+            return render_template('reset_system_password.html', username=username)
+
+        audit_log('SYSTEM_USER_PASSWORD_RESET', f'target_user={username}')
+        flash(f'Password reset for "{username}" successfully!', 'success')
+        return redirect(url_for('list_system_users'))
+
+    return render_template('reset_system_password.html', username=username)
 
 if __name__ == '__main__':
     app.run(debug=True)

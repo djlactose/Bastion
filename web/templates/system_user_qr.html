@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}2FA Setup - {{ username }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .qr-container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+    .qr-container pre {
+        font-size: 6px;
+        line-height: 6px;
+        letter-spacing: 1px;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-qr-code me-1"></i>Google Authenticator Setup - {{ username }}
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <strong>Important:</strong> This QR code is shown only once. The user must scan it now with Google Authenticator or a compatible TOTP app.
+        </div>
+        {% if qr_content %}
+        <div class="text-center mb-3">
+            <div class="qr-container">
+                <pre>{{ qr_content }}</pre>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            No QR code was generated. The user may need to set up 2FA manually.
+        </div>
+        {% endif %}
+        <a href="{{ url_for('list_system_users') }}" class="btn btn-primary">Done</a>
+    </div>
+</div>
+{% endblock %}

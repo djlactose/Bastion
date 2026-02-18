@@ -1,0 +1,13 @@
+{
+    "bastion": [""],
+    "base_port": 22,
+    "name": "",
+    "windowsMachines": [],
+    "linuxMachines": [
+        {"ip": "127.0.0.1", "connection": "M", "name": "Bastion Host"}
+    ],
+    "otherMachines": [
+        {"ip": "127.0.0.1", "connection": "B", "name": "Bastion Web Admin"},
+        {"ip": "127.0.0.1", "connection": "Y", "name": "Shutdown WSL"}
+    ]
+}
