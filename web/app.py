@@ -59,6 +59,25 @@ def validate_port(value):
     """Validate that value is a numeric port."""
     return value.isdigit() and 1 <= int(value) <= 65535
 
+# Connection types for the web UI dropdowns
+CONNECTION_TYPES = [
+    ("D", "Portainer Port - port 9000"),
+    ("H", "Website Ports - ports 8080, 8443"),
+    ("J", "Java Web Ports - ports 8443"),
+    ("L", "Linux SSH - port 22"),
+    ("M", "Bastion Host SSH - port from base_port"),
+    ("N", "Nessus Port - ports 8834, 8000"),
+    ("P", "Publish using MSDeploy - port 8172"),
+    ("W", "Windows RDP - port 3389"),
+    ("S", "SQL Server - port 1433"),
+    ("T", "Sysadmin Toolbox"),
+    ("X", "SOCKS Proxy - port 5222"),
+    ("Y", "Shutdown WSL"),
+    ("Z", "Wazuh Port - port 5601"),
+    ("B", "Bastion Web Admin - port 8000"),
+]
+KNOWN_CODES = [ct[0] for ct in CONNECTION_TYPES]
+
 def parse_config(file_path):
     config = {
         'bastion': [],
@@ -108,7 +127,7 @@ def index():
         return redirect(url_for('setup'))
 
     config = parse_config(config_file)
-    return render_template('index.html', **config)
+    return render_template('index.html', connection_types=CONNECTION_TYPES, known_codes=KNOWN_CODES, **config)
 
 @app.route('/update', methods=['POST'])
 @login_required

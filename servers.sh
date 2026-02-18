@@ -557,7 +557,7 @@ while [ $exitstatus -eq 0 ]; do
   OSMenu $depRDP
   exitstatus=$?
   if [ $exitstatus -ne 0 ]; then
-    echo "Take Luck!"
+    echo "Good luck!"
     continue
   fi
   # If CLI is selected, drop to bash shell.

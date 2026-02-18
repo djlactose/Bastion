@@ -8,330 +8,298 @@
         Bastion Server Configuration
     </div>
     <div class="card-body">
-        <form action="{{ url_for('update') }}" method="POST">
+        <form id="configForm" action="{{ url_for('update') }}" method="POST" onsubmit="return confirmSave(this)">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <div class="form-group">
-                <label for="bastion">Bastion Servers</label>
+            <div class="mb-3">
+                <label for="bastion-input" class="form-label">Bastion Servers</label>
                 <div id="bastion-list">
-                    {% for bastion in bastion %}
+                    {% for b in bastion %}
                         <div class="input-group mb-2">
-                            <input type="text" class="form-control" name="bastion" value="{{ bastion }}">
-                            <div class="input-group-append">
-                                <button type="button" class="btn btn-danger" onclick="removeEntry(this)">Remove</button>
-                            </div>
+                            <input type="text" class="form-control" name="bastion" id="bastion-input" value="{{ b }}" placeholder="hostname or IP" required>
+                            <button type="button" class="btn btn-danger" onclick="removeEntry(this)">Remove</button>
                         </div>
                     {% endfor %}
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="addBastion()">Add Bastion</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addBastion()">Add Bastion</button>
             </div>
 
-            <div class="form-group">
-                <label for="base_port">Base Port</label>
-                <input type="text" class="form-control" name="base_port" value="{{ base_port }}">
+            <div class="mb-3">
+                <label for="base_port" class="form-label">Base Port</label>
+                <input type="number" class="form-control" name="base_port" id="base_port" value="{{ base_port }}" min="1" max="65535" required>
             </div>
 
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" class="form-control" name="name" value="{{ name }}">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" name="name" id="name" value="{{ name }}" placeholder="Display name for this bastion" required>
             </div>
 
             <!-- Windows Machines -->
             <div class="card">
-                <div class="card-header">
-                    Windows Machines
+                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#windowsCollapse" aria-expanded="{{ 'true' if not windowsMachines else 'false' }}">
+                    <span>
+                        Windows Machines
+                        <span class="badge bg-secondary ms-2" id="windowsCount">{{ windowsMachines|length }}</span>
+                    </span>
+                    <i class="bi bi-chevron-down"></i>
                 </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th></th> <!-- Grip column -->
-                                <th>IP</th>
-                                <th>Connection Type</th>
-                                <th>Machine Name</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="windows-list">
-                            {% for machine in windowsMachines %}
-                            <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)">
-                                <td class="drag-handle">☰</td> <!-- Grip handle -->
-                                <td><input type="text" class="form-control" name="windows_ip" value="{{ machine[0].split('_')[0] }}"></td>
-                                <td>
-                                    <select class="form-control" name="windows_connection" onchange="toggleOtherConnection(this)">
-                                        <option value="D" {% if machine[0].split('_')[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
-                                        <option value="H" {% if machine[0].split('_')[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
-                                        <option value="J" {% if machine[0].split('_')[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
-                                        <option value="L" {% if machine[0].split('_')[1] == 'L' %}selected{% endif %}>Linux ssh - port 22</option>
-                                        <option value="M" {% if machine[0].split('_')[1] == 'M' %}selected{% endif %}>Bastion Host ssh - port from base_port</option>
-                                        <option value="N" {% if machine[0].split('_')[1] == 'N' %}selected{% endif %}>Nessus Port - ports 8834, 8000</option>
-                                        <option value="P" {% if machine[0].split('_')[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
-                                        <option value="W" {% if machine[0].split('_')[1] == 'W' %}selected{% endif %}>Windows RDP - port 3389</option>
-                                        <option value="S" {% if machine[0].split('_')[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
-                                        <option value="T" {% if machine[0].split('_')[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
-                                        <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
-                                        <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
-                                        <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
-                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
-                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
-                                    </select>
-                                    <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
-                                </td>
-                                <td><input type="text" class="form-control" name="windows_name" value="{{ machine[1] }}"></td>
-                                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <button type="button" class="btn btn-secondary" onclick="addWindowsMachine()">Add Windows Machine</button>
+                <div id="windowsCollapse" class="collapse {{ 'show' if not windowsMachines }}">
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>IP / Hostname</th>
+                                    <th>Connection Type</th>
+                                    <th>Machine Name</th>
+                                    <th style="width: 90px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="windows-list">
+                                {% for machine in windowsMachines %}
+                                <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
+                                    <td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>
+                                    <td><input type="text" class="form-control" name="windows_ip" value="{{ machine[0].split('_')[0] }}" placeholder="192.168.1.10" required></td>
+                                    <td>
+                                        <select class="form-select" name="windows_connection" onchange="toggleOtherConnection(this)">
+                                            {% set conn = machine[0].split('_')[1] %}
+                                            {% for opt in connection_types %}
+                                            <option value="{{ opt[0] }}" {% if conn == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
+                                            {% endfor %}
+                                            <option value="Other" {% if conn not in known_codes %}selected{% endif %}>Other (custom port)</option>
+                                        </select>
+                                        <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ conn if conn not in known_codes else '' }}" {% if conn not in known_codes %}style="display:block;"{% else %}style="display:none;"{% endif %} placeholder="Port number">
+                                    </td>
+                                    <td><input type="text" class="form-control" name="windows_name" value="{{ machine[1] }}" placeholder="Server name" required></td>
+                                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addMachine('windows')">Add Windows Machine</button>
+                    </div>
                 </div>
             </div>
 
             <!-- Linux Machines -->
             <div class="card">
-                <div class="card-header">
-                    Linux Machines
+                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#linuxCollapse" aria-expanded="{{ 'true' if not linuxMachines else 'false' }}">
+                    <span>
+                        Linux Machines
+                        <span class="badge bg-secondary ms-2" id="linuxCount">{{ linuxMachines|length }}</span>
+                    </span>
+                    <i class="bi bi-chevron-down"></i>
                 </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th></th> <!-- Grip column -->
-                                <th>IP</th>
-                                <th>Connection Type</th>
-                                <th>Machine Name</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="linux-list">
-                            {% for machine in linuxMachines %}
-                            <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)">
-                                <td class="drag-handle">☰</td> <!-- Grip handle -->
-                                <td><input type="text" class="form-control" name="linux_ip" value="{{ machine[0].split('_')[0] }}"></td>
-                                <td>
-                                    <select class="form-control" name="linux_connection" onchange="toggleOtherConnection(this)">
-                                        <option value="D" {% if machine[0].split('_')[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
-                                        <option value="H" {% if machine[0].split('_')[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
-                                        <option value="J" {% if machine[0].split('_')[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
-                                        <option value="L" {% if machine[0].split('_')[1] == 'L' %}selected{% endif %}>Linux ssh - port 22</option>
-                                        <option value="M" {% if machine[0].split('_')[1] == 'M' %}selected{% endif %}>Bastion Host ssh - port from base_port</option>
-                                        <option value="N" {% if machine[0].split('_')[1] == 'N' %}selected{% endif %}>Nessus Port - ports 8834, 8000</option>
-                                        <option value="P" {% if machine[0].split('_')[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
-                                        <option value="W" {% if machine[0].split('_')[1] == 'W' %}selected{% endif %}>Windows RDP - port 3389</option>
-                                        <option value="S" {% if machine[0].split('_')[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
-                                        <option value="T" {% if machine[0].split('_')[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
-                                        <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
-                                        <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
-                                        <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
-                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
-                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
-                                    </select>
-                                    <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
-                                </td>
-                                <td><input type="text" class="form-control" name="linux_name" value="{{ machine[1] }}"></td>
-                                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <button type="button" class="btn btn-secondary" onclick="addLinuxMachine()">Add Linux Machine</button>
+                <div id="linuxCollapse" class="collapse {{ 'show' if not linuxMachines }}">
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>IP / Hostname</th>
+                                    <th>Connection Type</th>
+                                    <th>Machine Name</th>
+                                    <th style="width: 90px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="linux-list">
+                                {% for machine in linuxMachines %}
+                                <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
+                                    <td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>
+                                    <td><input type="text" class="form-control" name="linux_ip" value="{{ machine[0].split('_')[0] }}" placeholder="192.168.1.10" required></td>
+                                    <td>
+                                        <select class="form-select" name="linux_connection" onchange="toggleOtherConnection(this)">
+                                            {% set conn = machine[0].split('_')[1] %}
+                                            {% for opt in connection_types %}
+                                            <option value="{{ opt[0] }}" {% if conn == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
+                                            {% endfor %}
+                                            <option value="Other" {% if conn not in known_codes %}selected{% endif %}>Other (custom port)</option>
+                                        </select>
+                                        <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ conn if conn not in known_codes else '' }}" {% if conn not in known_codes %}style="display:block;"{% else %}style="display:none;"{% endif %} placeholder="Port number">
+                                    </td>
+                                    <td><input type="text" class="form-control" name="linux_name" value="{{ machine[1] }}" placeholder="Server name" required></td>
+                                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addMachine('linux')">Add Linux Machine</button>
+                    </div>
                 </div>
             </div>
 
             <!-- Other Machines -->
             <div class="card">
-                <div class="card-header">
-                    Other Machines
+                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#otherCollapse" aria-expanded="{{ 'true' if not otherMachines else 'false' }}">
+                    <span>
+                        Other Machines
+                        <span class="badge bg-secondary ms-2" id="otherCount">{{ otherMachines|length }}</span>
+                    </span>
+                    <i class="bi bi-chevron-down"></i>
                 </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th></th> <!-- Grip column -->
-                                <th>IP</th>
-                                <th>Connection Type</th>
-                                <th>Machine Name</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="other-list">
-                            {% for machine in otherMachines %}
-                            <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)">
-                                <td class="drag-handle">☰</td> <!-- Grip handle -->
-                                <td><input type="text" class="form-control" name="other_ip" value="{{ machine[0].split('_')[0] }}"></td>
-                                <td>
-                                    <select class="form-control" name="other_connection" onchange="toggleOtherConnection(this)">
-                                        <option value="D" {% if machine[0].split('_')[1] == 'D' %}selected{% endif %}>Portainer Port - port 9000</option>
-                                        <option value="H" {% if machine[0].split('_')[1] == 'H' %}selected{% endif %}>Website Ports - ports 8080, 8443</option>
-                                        <option value="J" {% if machine[0].split('_')[1] == 'J' %}selected{% endif %}>Java Web Ports - ports 8443</option>
-                                        <option value="L" {% if machine[0].split('_')[1] == 'L' %}selected{% endif %}>Linux ssh - port 22</option>
-                                        <option value="M" {% if machine[0].split('_')[1] == 'M' %}selected{% endif %}>Bastion Host ssh - port from base_port</option>
-                                        <option value="N" {% if machine[0].split('_')[1] == 'N' %}selected{% endif %}>Nessus Port - ports 8834, 8000</option>
-                                        <option value="P" {% if machine[0].split('_')[1] == 'P' %}selected{% endif %}>Publish using MSDeploy - port 8172</option>
-                                        <option value="W" {% if machine[0].split('_')[1] == 'W' %}selected{% endif %}>Windows RDP - port 3389</option>
-                                        <option value="S" {% if machine[0].split('_')[1] == 'S' %}selected{% endif %}>SQL Server - port 1433</option>
-                                        <option value="T" {% if machine[0].split('_')[1] == 'T' %}selected{% endif %}>Sysadmin Toolbox</option>
-                                        <option value="X" {% if machine[0].split('_')[1] == 'X' %}selected{% endif %}>SOCKS Proxy - port 5222</option>
-                                        <option value="Y" {% if machine[0].split('_')[1] == 'Y' %}selected{% endif %}>Shutdown WSL</option>
-                                        <option value="Z" {% if machine[0].split('_')[1] == 'Z' %}selected{% endif %}>Wazuh Port - port 5601</option>
-                                        <option value="B" {% if machine[0].split('_')[1] == 'B' %}selected{% endif %}>Bastion Web Admin - port 8000</option>
-                                        <option value="Other" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}selected{% endif %}>Other</option>
-                                    </select>
-                                    <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ machine[0].split('_')[1] if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] else '' }}" {% if machine[0].split('_')[1] not in ['D', 'H', 'J', 'L', 'M', 'N', 'P', 'W', 'S', 'T', 'X', 'Y', 'Z', 'B'] %}style="display:block;"{% else %}style="display:none;"{% endif %}>
-                                </td>
-                                <td><input type="text" class="form-control" name="other_name" value="{{ machine[1] }}"></td>
-                                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <button type="button" class="btn btn-secondary" onclick="addOtherMachine()">Add Other Machine</button>
+                <div id="otherCollapse" class="collapse {{ 'show' if not otherMachines }}">
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>IP / Hostname</th>
+                                    <th>Connection Type</th>
+                                    <th>Machine Name</th>
+                                    <th style="width: 90px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="other-list">
+                                {% for machine in otherMachines %}
+                                <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
+                                    <td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>
+                                    <td><input type="text" class="form-control" name="other_ip" value="{{ machine[0].split('_')[0] }}" placeholder="192.168.1.10" required></td>
+                                    <td>
+                                        <select class="form-select" name="other_connection" onchange="toggleOtherConnection(this)">
+                                            {% set conn = machine[0].split('_')[1] %}
+                                            {% for opt in connection_types %}
+                                            <option value="{{ opt[0] }}" {% if conn == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
+                                            {% endfor %}
+                                            <option value="Other" {% if conn not in known_codes %}selected{% endif %}>Other (custom port)</option>
+                                        </select>
+                                        <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ conn if conn not in known_codes else '' }}" {% if conn not in known_codes %}style="display:block;"{% else %}style="display:none;"{% endif %} placeholder="Port number">
+                                    </td>
+                                    <td><input type="text" class="form-control" name="other_name" value="{{ machine[1] }}" placeholder="Server name" required></td>
+                                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addMachine('other')">Add Other Machine</button>
+                    </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save Configuration</button>
+            <button type="submit" class="btn btn-primary" id="saveBtn">
+                <i class="bi bi-save me-1"></i>Save Configuration
+            </button>
         </form>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
-    let draggedRow = null;
+    // Connection types data (single source of truth)
+    var connectionTypes = [
+        ["D", "Portainer Port - port 9000"],
+        ["H", "Website Ports - ports 8080, 8443"],
+        ["J", "Java Web Ports - ports 8443"],
+        ["L", "Linux SSH - port 22"],
+        ["M", "Bastion Host SSH - port from base_port"],
+        ["N", "Nessus Port - ports 8834, 8000"],
+        ["P", "Publish using MSDeploy - port 8172"],
+        ["W", "Windows RDP - port 3389"],
+        ["S", "SQL Server - port 1433"],
+        ["T", "Sysadmin Toolbox"],
+        ["X", "SOCKS Proxy - port 5222"],
+        ["Y", "Shutdown WSL"],
+        ["Z", "Wazuh Port - port 5601"],
+        ["B", "Bastion Web Admin - port 8000"]
+    ];
+
+    // Drag-and-drop
+    var draggedRow = null;
 
     function allowDrop(event) {
         event.preventDefault();
+        var targetRow = event.target.closest('tr');
+        if (targetRow && draggedRow && draggedRow !== targetRow && draggedRow.closest('tbody') === targetRow.closest('tbody')) {
+            // Remove previous drop indicators
+            document.querySelectorAll('.drop-above, .drop-below').forEach(function(el) {
+                el.classList.remove('drop-above', 'drop-below');
+            });
+            var position = event.clientY - targetRow.getBoundingClientRect().top;
+            if (position < targetRow.offsetHeight / 2) {
+                targetRow.classList.add('drop-above');
+            } else {
+                targetRow.classList.add('drop-below');
+            }
+        }
     }
 
     function drag(event) {
         draggedRow = event.target.closest('tr');
-        event.dataTransfer.effectAllowed = "move"; // Define effect
+        draggedRow.classList.add('dragging');
+        event.dataTransfer.effectAllowed = "move";
+    }
+
+    function dragEnd(event) {
+        if (draggedRow) draggedRow.classList.remove('dragging');
+        document.querySelectorAll('.drop-above, .drop-below').forEach(function(el) {
+            el.classList.remove('drop-above', 'drop-below');
+        });
+        draggedRow = null;
     }
 
     function drop(event) {
         event.preventDefault();
-        const targetRow = event.target.closest('tr');
-        const tableBody = targetRow.closest('tbody');
+        var targetRow = event.target.closest('tr');
+        var tableBody = targetRow.closest('tbody');
+
+        document.querySelectorAll('.drop-above, .drop-below').forEach(function(el) {
+            el.classList.remove('drop-above', 'drop-below');
+        });
 
         if (draggedRow && draggedRow !== targetRow && draggedRow.closest('tbody') === tableBody) {
-            const position = event.clientY - targetRow.getBoundingClientRect().top;
+            var position = event.clientY - targetRow.getBoundingClientRect().top;
             if (position < targetRow.offsetHeight / 2) {
                 tableBody.insertBefore(draggedRow, targetRow);
             } else {
                 tableBody.insertBefore(draggedRow, targetRow.nextSibling);
             }
         }
-        draggedRow = null; // Reset after drop
+        if (draggedRow) draggedRow.classList.remove('dragging');
+        draggedRow = null;
+    }
+
+    // Build connection type options HTML
+    function buildConnectionOptions() {
+        var html = '';
+        connectionTypes.forEach(function(ct) {
+            html += '<option value="' + ct[0] + '">' + ct[1] + '</option>';
+        });
+        html += '<option value="Other">Other (custom port)</option>';
+        return html;
+    }
+
+    // Unified add machine function
+    function addMachine(category) {
+        var table = document.getElementById(category + '-list');
+        var row = table.insertRow(-1);
+        row.setAttribute("draggable", "true");
+        row.setAttribute("ondragstart", "drag(event)");
+        row.setAttribute("ondragover", "allowDrop(event)");
+        row.setAttribute("ondrop", "drop(event)");
+        row.setAttribute("ondragend", "dragEnd(event)");
+        row.innerHTML =
+            '<td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>' +
+            '<td><input type="text" class="form-control" name="' + category + '_ip" placeholder="192.168.1.10" required></td>' +
+            '<td>' +
+                '<select class="form-select" name="' + category + '_connection" onchange="toggleOtherConnection(this)">' +
+                    buildConnectionOptions() +
+                '</select>' +
+                '<input type="text" class="form-control mt-2" name="' + category + '_other_connection" style="display:none;" placeholder="Port number">' +
+            '</td>' +
+            '<td><input type="text" class="form-control" name="' + category + '_name" placeholder="Server name" required></td>' +
+            '<td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>';
+        updateCounts();
     }
 
     function addBastion() {
-        const div = document.createElement('div');
+        var div = document.createElement('div');
         div.className = 'input-group mb-2';
-        div.innerHTML = '<input type="text" class="form-control" name="bastion">' +
-                        '<div class="input-group-append">' +
-                        '<button type="button" class="btn btn-danger" onclick="removeEntry(this)">Remove</button>' +
-                        '</div>';
+        div.innerHTML = '<input type="text" class="form-control" name="bastion" placeholder="hostname or IP" required>' +
+                        '<button type="button" class="btn btn-danger" onclick="removeEntry(this)">Remove</button>';
         document.getElementById('bastion-list').appendChild(div);
     }
 
-    function addWindowsMachine() {
-        const table = document.getElementById('windows-list');
-        const row = table.insertRow(-1);
-        row.setAttribute("draggable", "true");
-        row.setAttribute("ondragstart", "drag(event)");
-        row.setAttribute("ondragover", "allowDrop(event)");
-        row.setAttribute("ondrop", "drop(event)");
-        row.innerHTML = '<td class="drag-handle">☰</td>' +
-                        '<td><input type="text" class="form-control" name="windows_ip"></td>' +
-                        '<td>' +
-                            '<select class="form-control" name="windows_connection" onchange="toggleOtherConnection(this)">' +
-                                '<option value="D">Portainer Port - port 9000</option>' +
-                                '<option value="H">Website Ports - ports 8080, 8443</option>' +
-                                '<option value="J">Java Web Ports - ports 8443</option>' +
-                                '<option value="L">Linux ssh - port 22</option>' +
-                                '<option value="M">Bastion Host ssh - port from base_port</option>' +
-                                '<option value="N">Nessus Port - ports 8834, 8000</option>' +
-                                '<option value="P">Publish using MSDeploy - port 8172</option>' +
-                                '<option value="W">Windows RDP - port 3389</option>' +
-                                '<option value="S">SQL Server - port 1433</option>' +
-                                '<option value="T">Sysadmin Toolbox</option>' +
-                                '<option value="X">SOCKS Proxy - port 5222</option>' +
-                                '<option value="Y">Shutdown WSL</option>' +
-                                '<option value="Z">Wazuh Port - port 5601</option>' +
-                                '<option value="B">Bastion Web Admin - port 8000</option>' +
-                                '<option value="Other">Other</option>' +
-                            '</select>' +
-                            '<input type="text" class="form-control mt-2" name="windows_other_connection" style="display:none;">' +
-                        '</td>' +
-                        '<td><input type="text" class="form-control" name="windows_name"></td>' +
-                        '<td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>';
-    }
-
-    function addLinuxMachine() {
-        const table = document.getElementById('linux-list');
-        const row = table.insertRow(-1);
-        row.setAttribute("draggable", "true");
-        row.setAttribute("ondragstart", "drag(event)");
-        row.setAttribute("ondragover", "allowDrop(event)");
-        row.setAttribute("ondrop", "drop(event)");
-        row.innerHTML = '<td class="drag-handle">☰</td>' +
-                        '<td><input type="text" class="form-control" name="linux_ip"></td>' +
-                        '<td>' +
-                            '<select class="form-control" name="linux_connection" onchange="toggleOtherConnection(this)">' +
-                                '<option value="D">Portainer Port - port 9000</option>' +
-                                '<option value="H">Website Ports - ports 8080, 8443</option>' +
-                                '<option value="J">Java Web Ports - ports 8443</option>' +
-                                '<option value="L">Linux ssh - port 22</option>' +
-                                '<option value="M">Bastion Host ssh - port from base_port</option>' +
-                                '<option value="N">Nessus Port - ports 8834, 8000</option>' +
-                                '<option value="P">Publish using MSDeploy - port 8172</option>' +
-                                '<option value="W">Windows RDP - port 3389</option>' +
-                                '<option value="S">SQL Server - port 1433</option>' +
-                                '<option value="T">Sysadmin Toolbox</option>' +
-                                '<option value="X">SOCKS Proxy - port 5222</option>' +
-                                '<option value="Y">Shutdown WSL</option>' +
-                                '<option value="Z">Wazuh Port - port 5601</option>' +
-                                '<option value="B">Bastion Web Admin - port 8000</option>' +
-                                '<option value="Other">Other</option>' +
-                            '</select>' +
-                            '<input type="text" class="form-control mt-2" name="linux_other_connection" style="display:none;">' +
-                        '</td>' +
-                        '<td><input type="text" class="form-control" name="linux_name"></td>' +
-                        '<td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>';
-    }
-
-    function addOtherMachine() {
-        const table = document.getElementById('other-list');
-        const row = table.insertRow(-1);
-        row.setAttribute("draggable", "true");
-        row.setAttribute("ondragstart", "drag(event)");
-        row.setAttribute("ondragover", "allowDrop(event)");
-        row.setAttribute("ondrop", "drop(event)");
-        row.innerHTML = '<td class="drag-handle">☰</td>' +
-                        '<td><input type="text" class="form-control" name="other_ip"></td>' +
-                        '<td>' +
-                            '<select class="form-control" name="other_connection" onchange="toggleOtherConnection(this)">' +
-                                '<option value="D">Portainer Port - port 9000</option>' +
-                                '<option value="H">Website Ports - ports 8080, 8443</option>' +
-                                '<option value="J">Java Web Ports - ports 8443</option>' +
-                                '<option value="L">Linux ssh - port 22</option>' +
-                                '<option value="M">Bastion Host ssh - port from base_port</option>' +
-                                '<option value="N">Nessus Port - ports 8834, 8000</option>' +
-                                '<option value="P">Publish using MSDeploy - port 8172</option>' +
-                                '<option value="W">Windows RDP - port 3389</option>' +
-                                '<option value="S">SQL Server - port 1433</option>' +
-                                '<option value="T">Sysadmin Toolbox</option>' +
-                                '<option value="X">SOCKS Proxy - port 5222</option>' +
-                                '<option value="Y">Shutdown WSL</option>' +
-                                '<option value="Z">Wazuh Port - port 5601</option>' +
-                                '<option value="B">Bastion Web Admin - port 8000</option>' +
-                                '<option value="Other">Other</option>' +
-                            '</select>' +
-                            '<input type="text" class="form-control mt-2" name="other_other_connection" style="display:none;">' +
-                        '</td>' +
-                        '<td><input type="text" class="form-control" name="other_name"></td>' +
-                        '<td><button type="button" class="btn btn-danger" onclick="removeRow(this)">Remove</button></td>';
-    }
-
     function toggleOtherConnection(selectElement) {
-        const otherConnectionInput = selectElement.nextElementSibling;
+        var otherConnectionInput = selectElement.nextElementSibling;
         if (selectElement.value === 'Other') {
             otherConnectionInput.style.display = 'block';
         } else {
@@ -346,6 +314,24 @@
 
     function removeRow(button) {
         button.closest('tr').remove();
+        updateCounts();
+    }
+
+    function updateCounts() {
+        document.getElementById('windowsCount').textContent = document.getElementById('windows-list').rows.length;
+        document.getElementById('linuxCount').textContent = document.getElementById('linux-list').rows.length;
+        document.getElementById('otherCount').textContent = document.getElementById('other-list').rows.length;
+    }
+
+    // Save confirmation and button state
+    function confirmSave(form) {
+        if (!confirm('This will update the live configuration for all users. Continue?')) {
+            return false;
+        }
+        var btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...';
+        return true;
     }
 </script>
 
@@ -353,9 +339,33 @@
     .drag-handle {
         cursor: grab;
         font-size: 1.5rem;
+        user-select: none;
     }
     .drag-handle:active {
         cursor: grabbing;
+    }
+    tr.dragging {
+        opacity: 0.4;
+        background: #e3f2fd !important;
+    }
+    tr.drop-above {
+        border-top: 3px solid var(--bs-primary) !important;
+    }
+    tr.drop-below {
+        border-bottom: 3px solid var(--bs-primary) !important;
+    }
+    .card-header[data-bs-toggle="collapse"] {
+        cursor: pointer;
+    }
+    .card-header[data-bs-toggle="collapse"]:hover {
+        background-color: rgba(0,0,0,0.05);
+    }
+    .card-header .bi-chevron-down {
+        transition: transform 0.2s;
+    }
+    .card-header[aria-expanded="false"] .bi-chevron-down,
+    .card-header.collapsed .bi-chevron-down {
+        transform: rotate(-90deg);
     }
 </style>
 {% endblock %}

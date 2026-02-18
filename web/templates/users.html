@@ -20,10 +20,16 @@
                 {% for user in users %}
                 <tr>
                     <td>{{ user.username }}</td>
-                    <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+                    <td>
+                        {% if user.is_admin %}
+                            <span class="badge bg-success">Admin</span>
+                        {% else %}
+                            <span class="badge bg-secondary">User</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <a href="{{ url_for('edit_user', id=user.id) }}" class="btn btn-sm btn-primary">Edit</a>
-                        <form action="{{ url_for('delete_user', id=user.id) }}" method="POST" style="display:inline;">
+                        <form action="{{ url_for('delete_user', id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete user \'{{ user.username }}\'? This cannot be undone.');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
