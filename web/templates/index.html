@@ -33,151 +33,93 @@
                 <input type="text" class="form-control" name="name" id="name" value="{{ name }}" placeholder="Display name for this bastion" required>
             </div>
 
-            <!-- Windows Machines -->
+            {% macro machine_section(label, id_prefix, machines) %}
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#windowsCollapse" aria-expanded="{{ 'true' if not windowsMachines else 'false' }}">
+                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#{{ id_prefix }}Collapse" aria-expanded="{{ 'true' if not machines else 'false' }}">
                     <span>
-                        Windows Machines
-                        <span class="badge bg-secondary ms-2" id="windowsCount">{{ windowsMachines|length }}</span>
+                        {{ label }}
+                        <span class="badge bg-secondary ms-2" id="{{ id_prefix }}Count">{{ machines|length }}</span>
                     </span>
                     <i class="bi bi-chevron-down"></i>
                 </div>
-                <div id="windowsCollapse" class="collapse {{ 'show' if not windowsMachines }}">
+                <div id="{{ id_prefix }}Collapse" class="collapse {{ 'show' if not machines }}">
                     <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th>IP / Hostname</th>
-                                    <th>Connection Type</th>
-                                    <th>Machine Name</th>
-                                    <th style="width: 90px;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="windows-list">
-                                {% for machine in windowsMachines %}
-                                <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
-                                    <td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>
-                                    <td><input type="text" class="form-control" name="windows_ip" value="{{ machine[0].split('_')[0] }}" placeholder="192.168.1.10" required></td>
-                                    <td>
-                                        <select class="form-select" name="windows_connection" onchange="toggleOtherConnection(this)">
-                                            {% set conn = machine[0].split('_')[1] %}
-                                            {% for opt in connection_types %}
-                                            <option value="{{ opt[0] }}" {% if conn == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
-                                            {% endfor %}
-                                            <option value="Other" {% if conn not in known_codes %}selected{% endif %}>Other (custom port)</option>
-                                        </select>
-                                        <input type="text" class="form-control mt-2" name="windows_other_connection" value="{{ conn if conn not in known_codes else '' }}" {% if conn not in known_codes %}style="display:block;"{% else %}style="display:none;"{% endif %} placeholder="Port number">
-                                    </td>
-                                    <td><input type="text" class="form-control" name="windows_name" value="{{ machine[1] }}" placeholder="Server name" required></td>
-                                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="addMachine('windows')">Add Windows Machine</button>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"></th>
+                                        <th>IP / Hostname</th>
+                                        <th>Connection Type</th>
+                                        <th>Machine Name</th>
+                                        <th style="width: 90px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="{{ id_prefix }}-list">
+                                    {% for machine in machines %}
+                                    <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
+                                        <td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>
+                                        <td><input type="text" class="form-control" name="{{ id_prefix }}_ip" value="{{ machine[0].split('_')[0] }}" placeholder="192.168.1.10" required></td>
+                                        <td>
+                                            <select class="form-select" name="{{ id_prefix }}_connection" onchange="toggleOtherConnection(this)">
+                                                {% set conn = machine[0].split('_')[1] %}
+                                                {% for opt in connection_types %}
+                                                <option value="{{ opt[0] }}" {% if conn == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
+                                                {% endfor %}
+                                                <option value="Other" {% if conn not in known_codes %}selected{% endif %}>Other (custom port)</option>
+                                            </select>
+                                            <input type="text" class="form-control mt-2" name="{{ id_prefix }}_other_connection" value="{{ conn if conn not in known_codes else '' }}" {% if conn not in known_codes %}style="display:block;"{% else %}style="display:none;"{% endif %} placeholder="Port number">
+                                        </td>
+                                        <td><input type="text" class="form-control" name="{{ id_prefix }}_name" value="{{ machine[1] }}" placeholder="Server name" required></td>
+                                        <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if not machines %}
+                        <div class="text-center text-muted py-3 empty-state" id="{{ id_prefix }}-empty">
+                            <i class="bi bi-plus-circle" style="font-size: 1.5rem;"></i>
+                            <p class="mb-0 mt-1">No {{ label|lower }} configured yet.</p>
+                        </div>
+                        {% endif %}
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addMachine('{{ id_prefix }}')">Add {{ label.split(' ')[0] }} Machine</button>
                     </div>
                 </div>
             </div>
+            {% endmacro %}
 
-            <!-- Linux Machines -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#linuxCollapse" aria-expanded="{{ 'true' if not linuxMachines else 'false' }}">
-                    <span>
-                        Linux Machines
-                        <span class="badge bg-secondary ms-2" id="linuxCount">{{ linuxMachines|length }}</span>
-                    </span>
-                    <i class="bi bi-chevron-down"></i>
-                </div>
-                <div id="linuxCollapse" class="collapse {{ 'show' if not linuxMachines }}">
-                    <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th>IP / Hostname</th>
-                                    <th>Connection Type</th>
-                                    <th>Machine Name</th>
-                                    <th style="width: 90px;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="linux-list">
-                                {% for machine in linuxMachines %}
-                                <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
-                                    <td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>
-                                    <td><input type="text" class="form-control" name="linux_ip" value="{{ machine[0].split('_')[0] }}" placeholder="192.168.1.10" required></td>
-                                    <td>
-                                        <select class="form-select" name="linux_connection" onchange="toggleOtherConnection(this)">
-                                            {% set conn = machine[0].split('_')[1] %}
-                                            {% for opt in connection_types %}
-                                            <option value="{{ opt[0] }}" {% if conn == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
-                                            {% endfor %}
-                                            <option value="Other" {% if conn not in known_codes %}selected{% endif %}>Other (custom port)</option>
-                                        </select>
-                                        <input type="text" class="form-control mt-2" name="linux_other_connection" value="{{ conn if conn not in known_codes else '' }}" {% if conn not in known_codes %}style="display:block;"{% else %}style="display:none;"{% endif %} placeholder="Port number">
-                                    </td>
-                                    <td><input type="text" class="form-control" name="linux_name" value="{{ machine[1] }}" placeholder="Server name" required></td>
-                                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="addMachine('linux')">Add Linux Machine</button>
-                    </div>
-                </div>
+            {{ machine_section("Windows Machines", "windows", windowsMachines) }}
+            {{ machine_section("Linux Machines", "linux", linuxMachines) }}
+            {{ machine_section("Other Machines", "other", otherMachines) }}
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="saveBtn">
+                    <i class="bi bi-save me-1"></i>Save Configuration
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="previewConfig()">
+                    <i class="bi bi-eye me-1"></i>Preview
+                </button>
             </div>
-
-            <!-- Other Machines -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#otherCollapse" aria-expanded="{{ 'true' if not otherMachines else 'false' }}">
-                    <span>
-                        Other Machines
-                        <span class="badge bg-secondary ms-2" id="otherCount">{{ otherMachines|length }}</span>
-                    </span>
-                    <i class="bi bi-chevron-down"></i>
-                </div>
-                <div id="otherCollapse" class="collapse {{ 'show' if not otherMachines }}">
-                    <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th>IP / Hostname</th>
-                                    <th>Connection Type</th>
-                                    <th>Machine Name</th>
-                                    <th style="width: 90px;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="other-list">
-                                {% for machine in otherMachines %}
-                                <tr draggable="true" ondragstart="drag(event)" ondragover="allowDrop(event)" ondrop="drop(event)" ondragend="dragEnd(event)">
-                                    <td class="drag-handle" aria-label="Drag to reorder" role="button">&#9776;</td>
-                                    <td><input type="text" class="form-control" name="other_ip" value="{{ machine[0].split('_')[0] }}" placeholder="192.168.1.10" required></td>
-                                    <td>
-                                        <select class="form-select" name="other_connection" onchange="toggleOtherConnection(this)">
-                                            {% set conn = machine[0].split('_')[1] %}
-                                            {% for opt in connection_types %}
-                                            <option value="{{ opt[0] }}" {% if conn == opt[0] %}selected{% endif %}>{{ opt[1] }}</option>
-                                            {% endfor %}
-                                            <option value="Other" {% if conn not in known_codes %}selected{% endif %}>Other (custom port)</option>
-                                        </select>
-                                        <input type="text" class="form-control mt-2" name="other_other_connection" value="{{ conn if conn not in known_codes else '' }}" {% if conn not in known_codes %}style="display:block;"{% else %}style="display:none;"{% endif %} placeholder="Port number">
-                                    </td>
-                                    <td><input type="text" class="form-control" name="other_name" value="{{ machine[1] }}" placeholder="Server name" required></td>
-                                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="addMachine('other')">Add Other Machine</button>
-                    </div>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary" id="saveBtn">
-                <i class="bi bi-save me-1"></i>Save Configuration
-            </button>
         </form>
+    </div>
+</div>
+
+<!-- Config Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Configuration Preview (servers.conf)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="previewContent" class="bg-dark text-light p-3 rounded" style="font-size: 0.85rem; max-height: 500px; overflow-y: auto;"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -202,6 +144,20 @@
         ["B", "Bastion Web Admin - port 8000"]
     ];
 
+    // Track unsaved changes
+    var formDirty = false;
+    var formSubmitting = false;
+
+    document.getElementById('configForm').addEventListener('input', function() { formDirty = true; });
+    document.getElementById('configForm').addEventListener('change', function() { formDirty = true; });
+
+    window.addEventListener('beforeunload', function(e) {
+        if (formDirty && !formSubmitting) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
     // Drag-and-drop
     var draggedRow = null;
 
@@ -209,7 +165,6 @@
         event.preventDefault();
         var targetRow = event.target.closest('tr');
         if (targetRow && draggedRow && draggedRow !== targetRow && draggedRow.closest('tbody') === targetRow.closest('tbody')) {
-            // Remove previous drop indicators
             document.querySelectorAll('.drop-above, .drop-below').forEach(function(el) {
                 el.classList.remove('drop-above', 'drop-below');
             });
@@ -226,6 +181,7 @@
         draggedRow = event.target.closest('tr');
         draggedRow.classList.add('dragging');
         event.dataTransfer.effectAllowed = "move";
+        formDirty = true;
     }
 
     function dragEnd(event) {
@@ -270,6 +226,10 @@
     // Unified add machine function
     function addMachine(category) {
         var table = document.getElementById(category + '-list');
+        // Hide empty state if present
+        var emptyState = document.getElementById(category + '-empty');
+        if (emptyState) emptyState.style.display = 'none';
+
         var row = table.insertRow(-1);
         row.setAttribute("draggable", "true");
         row.setAttribute("ondragstart", "drag(event)");
@@ -288,6 +248,7 @@
             '<td><input type="text" class="form-control" name="' + category + '_name" placeholder="Server name" required></td>' +
             '<td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>';
         updateCounts();
+        formDirty = true;
     }
 
     function addBastion() {
@@ -296,6 +257,7 @@
         div.innerHTML = '<input type="text" class="form-control" name="bastion" placeholder="hostname or IP" required>' +
                         '<button type="button" class="btn btn-danger" onclick="removeEntry(this)">Remove</button>';
         document.getElementById('bastion-list').appendChild(div);
+        formDirty = true;
     }
 
     function toggleOtherConnection(selectElement) {
@@ -310,11 +272,21 @@
 
     function removeEntry(button) {
         button.closest('.input-group').remove();
+        formDirty = true;
     }
 
     function removeRow(button) {
-        button.closest('tr').remove();
+        var row = button.closest('tr');
+        var tbody = row.closest('tbody');
+        var category = tbody.id.replace('-list', '');
+        row.remove();
         updateCounts();
+        formDirty = true;
+        // Show empty state if table is now empty
+        if (tbody.rows.length === 0) {
+            var emptyState = document.getElementById(category + '-empty');
+            if (emptyState) emptyState.style.display = '';
+        }
     }
 
     function updateCounts() {
@@ -323,11 +295,61 @@
         document.getElementById('otherCount').textContent = document.getElementById('other-list').rows.length;
     }
 
+    // Config preview
+    function previewConfig() {
+        var form = document.getElementById('configForm');
+        var bastions = [];
+        form.querySelectorAll('input[name="bastion"]').forEach(function(el) {
+            if (el.value.trim()) bastions.push('"' + el.value.trim() + '"');
+        });
+
+        var basePort = form.querySelector('input[name="base_port"]').value;
+        var name = form.querySelector('input[name="name"]').value;
+
+        function getMachines(prefix) {
+            var ips = form.querySelectorAll('input[name="' + prefix + '_ip"]');
+            var conns = form.querySelectorAll('select[name="' + prefix + '_connection"]');
+            var others = form.querySelectorAll('input[name="' + prefix + '_other_connection"]');
+            var names = form.querySelectorAll('input[name="' + prefix + '_name"]');
+            var entries = [];
+            for (var i = 0; i < ips.length; i++) {
+                var ip = ips[i].value.trim();
+                var conn = conns[i].value === 'Other' ? others[i].value.trim() : conns[i].value;
+                var mName = names[i].value.trim();
+                if (ip && conn && mName) {
+                    entries.push('"' + ip + '_' + conn + '" "' + mName + '"');
+                }
+            }
+            return entries.join(' ');
+        }
+
+        var preview = '#!/bin/bash\n';
+        preview += '############################################\n';
+        preview += '#Bastion Server Address\n';
+        preview += 'bastion=(' + bastions.join(' ') + ')\n';
+        preview += '############################################\n';
+        preview += 'base_port=' + basePort + '\n';
+        preview += '############################################\n';
+        preview += 'name="' + name + '"\n';
+        preview += '############################################\n';
+        preview += '#Windows Machines List\n';
+        preview += 'windowsMachines=(' + getMachines('windows') + ')\n';
+        preview += '#Linux Machines List\n';
+        preview += 'linuxMachines=(' + getMachines('linux') + ')\n';
+        preview += '#Port Forward Machines List\n';
+        preview += 'otherMachines=(' + getMachines('other') + ')\n';
+        preview += '############################################\n';
+
+        document.getElementById('previewContent').textContent = preview;
+        new bootstrap.Modal(document.getElementById('previewModal')).show();
+    }
+
     // Save confirmation and button state
     function confirmSave(form) {
         if (!confirm('This will update the live configuration for all users. Continue?')) {
             return false;
         }
+        formSubmitting = true;
         var btn = document.getElementById('saveBtn');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...';

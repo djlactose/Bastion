@@ -1,4 +1,5 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
+from datetime import timedelta
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
@@ -21,6 +22,7 @@ else:
     app.config['SECRET_KEY'] = generated_key
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30 minute session timeout
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -319,6 +321,26 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.before_request
+def refresh_session():
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=30)
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_pw = request.form['current_password']
+        new_pw = request.form['password']
+        if not check_password_hash(current_user.password, current_pw):
+            flash('Current password is incorrect.', 'danger')
+            return render_template('change_password.html')
+        current_user.password = generate_password_hash(new_pw, method='pbkdf2:sha256')
+        db.session.commit()
+        flash('Password changed successfully!', 'success')
+        return redirect(url_for('index'))
+    return render_template('change_password.html')
+
 @app.route('/users')
 @login_required
 def list_users():
@@ -368,7 +390,11 @@ def edit_user(id):
         user.username = new_username
         if request.form['password']:
             user.password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
-        user.is_admin = 'is_admin' in request.form
+        new_is_admin = 'is_admin' in request.form
+        if user.is_admin and not new_is_admin and User.query.filter_by(is_admin=True).count() <= 1:
+            flash('Cannot remove admin from the last admin account.', 'danger')
+            return render_template('edit_user.html', user=user)
+        user.is_admin = new_is_admin
         db.session.commit()
         flash(f'Account updated for {user.username}!', 'success')
         return redirect(url_for('list_users'))
@@ -382,6 +408,12 @@ def delete_user(id):
         return redirect(url_for('index'))
 
     user = User.query.get_or_404(id)
+    if user.id == current_user.id:
+        flash('You cannot delete your own account.', 'danger')
+        return redirect(url_for('list_users'))
+    if user.is_admin and User.query.filter_by(is_admin=True).count() <= 1:
+        flash('Cannot delete the last admin account.', 'danger')
+        return redirect(url_for('list_users'))
     db.session.delete(user)
     db.session.commit()
     flash(f'Account deleted for {user.username}!', 'success')
