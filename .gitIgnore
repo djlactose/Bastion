@@ -3,3 +3,4 @@ servers.conf
 .github/
 __pycache__/
 web/instance/
+.claude/
