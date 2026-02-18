@@ -9,6 +9,7 @@
     </div>
     <div class="card-body">
         <form action="{{ url_for('update') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="form-group">
                 <label for="bastion">Bastion Servers</label>
                 <div id="bastion-list">

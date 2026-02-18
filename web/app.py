@@ -1,15 +1,32 @@
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import re
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'
+
+# Fix #1: File-based persistent SECRET_KEY
+secret_key_path = '/root/bastion/secret_key'
+if os.path.exists(secret_key_path):
+    with open(secret_key_path, 'r') as f:
+        app.config['SECRET_KEY'] = f.read().strip()
+else:
+    generated_key = os.urandom(24).hex()
+    os.makedirs(os.path.dirname(secret_key_path), exist_ok=True)
+    with open(secret_key_path, 'w') as f:
+        f.write(generated_key)
+    app.config['SECRET_KEY'] = generated_key
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Fix #3: CSRF protection
+csrf = CSRFProtect(app)
 
 # User model
 class User(UserMixin, db.Model):
@@ -24,6 +41,23 @@ def load_user(user_id):
 
 # Configuration file path
 config_file = '/etc/bastion/servers.conf'
+
+# Fix #4: Input sanitization for shell-safe values
+def sanitize_shell_input(value):
+    """Reject input containing shell metacharacters."""
+    dangerous_chars = re.compile(r'[;|&`$(){}\\<>\n\r\'"]')
+    if dangerous_chars.search(value):
+        return None
+    return value
+
+def validate_ip_or_hostname(value):
+    """Validate that value looks like an IP address or hostname."""
+    pattern = re.compile(r'^[a-zA-Z0-9._-]+$')
+    return pattern.match(value) is not None
+
+def validate_port(value):
+    """Validate that value is a numeric port."""
+    return value.isdigit() and 1 <= int(value) <= 65535
 
 def parse_config(file_path):
     config = {
@@ -41,40 +75,38 @@ def parse_config(file_path):
             for line in lines:
                 line = line.strip()
                 if line.startswith('bastion='):
-                    bastion_hosts = line.split('=')[1].strip('()').split('" "')
+                    # Fix #11: limit split to first '='
+                    bastion_hosts = line.split('=', 1)[1].strip('()').split('" "')
                     config['bastion'] = [host.strip('"') for host in bastion_hosts if host.strip('"')]
                 elif line.startswith('base_port='):
-                    config['base_port'] = line.split('=')[1]
+                    config['base_port'] = line.split('=', 1)[1]
                 elif line.startswith('name='):
-                    config['name'] = line.split('=')[1].strip('"')
+                    config['name'] = line.split('=', 1)[1].strip('"')
                 elif line.startswith('windowsMachines='):
-                    content = line.split('=')[1].strip('()')
+                    content = line.split('=', 1)[1].strip('()')
                     items = content.split('" "')
                     config['windowsMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2) if i+1 < len(items)]
                 elif line.startswith('linuxMachines='):
-                    content = line.split('=')[1].strip('()')
+                    content = line.split('=', 1)[1].strip('()')
                     items = content.split('" "')
                     config['linuxMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2) if i+1 < len(items)]
                 elif line.startswith('otherMachines='):
-                    content = line.split('=')[1].strip('()')
+                    content = line.split('=', 1)[1].strip('()')
                     items = content.split('" "')
                     config['otherMachines'] = [(items[i].strip('" '), items[i+1].strip('" ')) for i in range(0, len(items), 2) if i+1 < len(items)]
-    
+
     return config
 
-def initialize_database():
+# Fix #2: Initialize database once at startup instead of every request
+with app.app_context():
     db.create_all()
-
-@app.before_request
-def before_request():
-    initialize_database()
 
 @app.route('/')
 @login_required
 def index():
     if not User.query.first():
         return redirect(url_for('setup'))
-    
+
     config = parse_config(config_file)
     return render_template('index.html', **config)
 
@@ -84,7 +116,23 @@ def update():
     bastion = [host for host in request.form.getlist('bastion') if host.strip()]
     base_port = request.form['base_port']
     name = request.form['name']
-    
+
+    # Fix #4: Validate base_port is numeric
+    if not validate_port(base_port):
+        flash('Invalid port number.', 'danger')
+        return redirect(url_for('index'))
+
+    # Fix #4: Validate bastion hosts
+    for host in bastion:
+        if not validate_ip_or_hostname(host):
+            flash(f'Invalid bastion host: {host}', 'danger')
+            return redirect(url_for('index'))
+
+    # Fix #4: Sanitize name
+    if sanitize_shell_input(name) is None:
+        flash('Name contains invalid characters.', 'danger')
+        return redirect(url_for('index'))
+
     windows_ips = request.form.getlist('windows_ip')
     windows_connections = request.form.getlist('windows_connection')
     windows_other_connections = request.form.getlist('windows_other_connection')
@@ -102,18 +150,34 @@ def update():
 
     def process_entries(ips, connections, other_connections, names):
         machines = []
-        for ip, conn, other_conn, name in zip(ips, connections, other_connections, names):
+        for ip, conn, other_conn, entry_name in zip(ips, connections, other_connections, names):
             if conn == 'Other':
                 connection_type = other_conn.strip()
             else:
                 connection_type = conn
-            if ip.strip() and connection_type and name.strip():
-                machines.append('"{}_{}" "{}"'.format(ip.strip(), connection_type, name.strip()))
+            if ip.strip() and connection_type and entry_name.strip():
+                # Fix #4: Validate each field
+                if not validate_ip_or_hostname(ip.strip()):
+                    flash(f'Invalid IP/hostname: {ip}', 'danger')
+                    return None
+                if sanitize_shell_input(connection_type) is None:
+                    flash(f'Invalid connection type: {connection_type}', 'danger')
+                    return None
+                if sanitize_shell_input(entry_name.strip()) is None:
+                    flash(f'Invalid machine name: {entry_name}', 'danger')
+                    return None
+                machines.append('"{}_{}" "{}"'.format(ip.strip(), connection_type, entry_name.strip()))
         return machines
 
     windows_machines = process_entries(windows_ips, windows_connections, windows_other_connections, windows_names)
+    if windows_machines is None:
+        return redirect(url_for('index'))
     linux_machines = process_entries(linux_ips, linux_connections, linux_other_connections, linux_names)
+    if linux_machines is None:
+        return redirect(url_for('index'))
     other_machines = process_entries(other_ips, other_connections, other_other_connections, other_names)
+    if other_machines is None:
+        return redirect(url_for('index'))
 
     bastion_str = 'bastion=(' + ' '.join(f'"{host}"' for host in bastion) + ')'
     windows_machines_str = 'windowsMachines=(' + ' '.join(windows_machines) + ')'
@@ -122,7 +186,7 @@ def update():
 
     config_content = f"""#!/bin/bash
 ############################################
-#Bastion Server Address 
+#Bastion Server Address
 #NOTE: To load balance enter more than one host in quotes
 {bastion_str}
 ############################################
@@ -170,7 +234,7 @@ name="{name}"
 def login():
     if not User.query.first():
         return redirect(url_for('setup'))
-        
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -194,6 +258,10 @@ def setup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        # Fix #10: Check for duplicate username
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists.', 'danger')
+            return render_template('setup.html')
         is_admin = True
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         user = User(username=username, password=hashed_password, is_admin=is_admin)
@@ -213,6 +281,10 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        # Fix #10: Check for duplicate username
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists.', 'danger')
+            return render_template('register.html')
         is_admin = 'is_admin' in request.form
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         user = User(username=username, password=hashed_password, is_admin=is_admin)
@@ -243,10 +315,14 @@ def add_user():
     if not current_user.is_admin:
         flash('Only administrators can add users.', 'danger')
         return redirect(url_for('index'))
-    
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        # Fix #10: Check for duplicate username
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists.', 'danger')
+            return render_template('add_user.html')
         is_admin = 'is_admin' in request.form
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         user = User(username=username, password=hashed_password, is_admin=is_admin)
@@ -262,10 +338,15 @@ def edit_user(id):
     if not current_user.is_admin:
         flash('Only administrators can edit users.', 'danger')
         return redirect(url_for('index'))
-    
+
     user = User.query.get_or_404(id)
     if request.method == 'POST':
-        user.username = request.form['username']
+        new_username = request.form['username']
+        # Fix #10: Check for duplicate username (only if changed)
+        if new_username != user.username and User.query.filter_by(username=new_username).first():
+            flash('Username already exists.', 'danger')
+            return render_template('edit_user.html', user=user)
+        user.username = new_username
         if request.form['password']:
             user.password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
         user.is_admin = 'is_admin' in request.form
@@ -280,7 +361,7 @@ def delete_user(id):
     if not current_user.is_admin:
         flash('Only administrators can delete users.', 'danger')
         return redirect(url_for('index'))
-    
+
     user = User.query.get_or_404(id)
     db.session.delete(user)
     db.session.commit()

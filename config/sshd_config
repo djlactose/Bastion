@@ -70,7 +70,7 @@ KbdInteractiveAuthentication yes
 
 # GSSAPI options
 GSSAPIAuthentication yes
-GSSAPICleanupCredentials no
+GSSAPICleanupCredentials yes
 #GSSAPIStrictAcceptorCheck yes
 #GSSAPIKeyExchange no
 

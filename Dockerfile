@@ -1,5 +1,5 @@
 #Docker Image to spin up a Bastion Server
-FROM ubuntu:24.10
+FROM ubuntu:25.10
 
 EXPOSE 22
 EXPOSE 8000
@@ -9,7 +9,7 @@ VOLUME /root/bastion
 VOLUME /etc/bastion
 VOLUME /root/web/instance
 
-HEALTHCHECK CMD if [ $(nc -q 0 -w 1 localhost 22|grep -c "SSH") -gt 0 ]; then echo 0;else echo 1;fi || exit
+HEALTHCHECK CMD nc -q 0 -w 1 localhost 22 | grep -q "SSH"
 
 COPY config/sshd_config /etc/ssh/sshd_config
 COPY config/sshd /etc/pam.d/sshd
@@ -38,7 +38,7 @@ apt install -y -o Dpkg::Options::="--force-confold" python3-venv gunicorn openss
 python3 -m venv /opt/venv && \
 export PATH="/opt/venv/bin:$PATH" && \
 pip3 install -U pip && \
-pip3 install jinja2 cryptography flask-login flask-sqlalchemy flask gunicorn && \
+pip3 install jinja2 cryptography flask-login flask-sqlalchemy flask flask-wtf gunicorn && \
 mkdir /root/bastion && \
 chmod 700 /root/bastion/ && \
 chmod 755 /root/bin/adduser.sh && \
