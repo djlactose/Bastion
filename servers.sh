@@ -53,11 +53,11 @@ checkAppUpdate(){
   echo "**********************"
   # Randomly select one bastion host from the bastion array
   bastions=("${bastion[@]}")
-  bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
+  selectedBastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   # Compute MD5 hash for the current script file ($0)
   md5=`md5sum $0 | cut -d " " -f 1`
   # Securely copy the remote script from the bastion host to /tmp
-  scp -P $base_port $remote_user@$bastion:$upPath /tmp/
+  scp -P $base_port $remote_user@$selectedBastion:$upPath /tmp/
   # If the file was copied, compute its MD5 hash; otherwise, keep same hash.
   if [ -f "/tmp/servers.sh" ]; then
     newmd5=`md5sum /tmp/servers.sh | cut -d " " -f 1`
@@ -90,13 +90,13 @@ checkConfUpdate(){
   echo "**********************"
   # Randomly select one bastion host from the bastion array
   bastions=("${bastion[@]}")
-  bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
+  selectedBastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   # Set the local configuration file path
   confFile=$settingsFile
   # Compute the MD5 hash for the local configuration file
   confmd5=`md5sum $confFile | cut -d " " -f 1`
   # Copy the remote configuration file to /tmp
-  scp -P $base_port $remote_user@$bastion:$upConfPath /tmp/
+  scp -P $base_port $remote_user@$selectedBastion:$upConfPath /tmp/
   # If the file exists, compute its MD5 hash; otherwise, use the current hash.
   if [ -f "/tmp/servers.conf" ]; then
     confnewmd5=`md5sum /tmp/servers.conf | cut -d " " -f 1`
@@ -133,12 +133,12 @@ cleanUp(){
 # customFile: Create or load a custom configuration file with user-specific settings.
 customFile(){
   # Determine the custom file name based on the script name.
-  oldCustomFile=$(echo $0 | cut -c 3- | rev | cut -c 4- | rev).cust
+  oldCustomFile=$(basename "$0" .sh).cust
   if [ -f "$oldCustomFile" ]; then
     mv $oldCustomFile .$oldCustomFile
   fi
   # The custom file is stored as a hidden file in the same directory.
-  customFile=./.$(echo $0 | cut -c 3- | rev | cut -c 4- | rev).cust
+  customFile=./.$(basename "$0" .sh).cust
   if [ -f "$customFile" ]; then
     # If it exists, source it to load variables like remote_user.
     . $customFile
@@ -152,31 +152,31 @@ customFile(){
 }
 
 # Handle legacy settings file names by renaming old configuration files.
-oldSettingsFile=$(echo $0 | cut -c 3- | rev | cut -c 4- | rev).conf
+oldSettingsFile=$(basename "$0" .sh).conf
 if [ -f "$oldSettingsFile" ]; then
   mv $oldSettingsFile .$oldSettingsFile
 fi
 
 # Define the settings file (hidden) based on the script name.
-settingsFile=./.$(echo $0 | cut -c 3- | rev | cut -c 4- | rev).conf
+settingsFile=./.$(basename "$0" .sh).conf
 if [ -f "$settingsFile" ]; then
   # Source settings file if it exists.
   . $settingsFile
   bastions=("${bastion[@]}")
   # Randomly select a bastion host if multiple are defined.
-  bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
+  selectedBastion=${bastions[$RANDOM % ${#bastions[@]} ]}
   customFile
   # Set default SSH port if not defined.
   if [ -z "$base_port" ]; then
 	  base_port="22"
   fi
   # Test connectivity to the bastion host on the defined port.
-  basTest=`nc -q 0 -w 1 "$bastion" "$base_port" < /dev/null`
+  basTest=`nc -q 0 -w 1 "$selectedBastion" "$base_port" < /dev/null`
   count=0
   while [ -z "$basTest" ]; do
-	  echo "$bastion is down trying another random host from the list."
-	  bastion=${bastions[$RANDOM % ${#bastions[@]} ]}
-	  basTest=`nc -q 0 -w 1 "$bastion" "$base_port" < /dev/null`
+	  echo "$selectedBastion is down trying another random host from the list."
+	  selectedBastion=${bastions[$RANDOM % ${#bastions[@]} ]}
+	  basTest=`nc -q 0 -w 1 "$selectedBastion" "$base_port" < /dev/null`
 	  ((count++))
 	  if [ $count -gt 5 ]; then
 		  echo "Unable to connect to any of the hosts that were tried... Exiting"
@@ -255,36 +255,36 @@ doConnection(){
     B) # Bastion Web Admin: Forward local port 8000 to the bastion host's port 8000.
       if [ $multiCon -eq 0 ]; then
         openWeb http://localhost:8000
-        ssh $remote_user@$bastion -p $base_port -tL 8000:localhost:8000 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 8000:localhost:8000 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8000 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         openWeb http://localhost:8000
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8000:localhost:8000 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8000:localhost:8000 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
       fi
       ;;
     W) # Windows Machines: Forward local port to remote RDP port (3389)
-      ssh $remote_user@$bastion -p $base_port -fL $port:$2:3389 sleep 30
-      if [ $(ps -ef | grep -c "ssh $remote_user@$bastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ]; then
+      ssh $remote_user@$selectedBastion -p $base_port -fL $port:$2:3389 sleep 30
+      if [ $(ps -ef | grep -c "ssh $remote_user@$selectedBastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ]; then
         if [ $multiCon -eq 0 ]; then
           clear
           echo The Bastion server name is `tput setaf 2`$name `tput sgr0`
-          echo The Bastion Host is `tput setaf 2`$bastion `tput sgr0`
+          echo The Bastion Host is `tput setaf 2`$selectedBastion `tput sgr0`
           echo Connected to `tput setaf 2`$2 `tput sgr0`
           echo The port is `tput setaf 2`$port `tput sgr0`
           echo Connection started at `tput setaf 2`$(date) `tput sgr0`
           $exe $flags localhost:$port &
           # Display a timer showing how long the connection has been established.
           count=1
-          mCount=00
-          hCount=00
-          dCount=00
-          while [ $(ps -ef | grep -c "ssh $remote_user@$bastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ]; do
+          mCount=0
+          hCount=0
+          dCount=0
+          while [ $(ps -ef | grep -c "ssh $remote_user@$selectedBastion -p $base_port -fL $port:$2:3389 sleep 30") -gt 1 ]; do
             sleep 1
-            printf "Connection established for `tput setaf 2`$dCount`tput sgr0` days `tput setaf 2`$hCount:$mCount:$count`tput sgr0` \r"
+            printf "Connection established for `tput setaf 2`%02d`tput sgr0` days `tput setaf 2`%02d:%02d:%02d`tput sgr0` \r" $dCount $hCount $mCount $count
             count=`expr $count + 1`
             if [ $count -eq 60 ]; then
               mCount=`expr $mCount + 1`
@@ -307,23 +307,23 @@ doConnection(){
       fi
       ;;
     L) # Linux Machines: Forward local port to remote SSH port (22) and create an SSH session.
-      ssh $remote_user@$bastion -p $base_port -fL $port:$2:22 sleep 10 
-      if [ $(ps -ef | grep -c "ssh $remote_user@$bastion -p $base_port -fL $port:$2:22 sleep 10") -gt 1 ]; then
+      ssh $remote_user@$selectedBastion -p $base_port -fL $port:$2:22 sleep 10 
+      if [ $(ps -ef | grep -c "ssh $remote_user@$selectedBastion -p $base_port -fL $port:$2:22 sleep 10") -gt 1 ]; then
         ssh localhost -p $port -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
       else
         echo "Problem establishing connection to Bastion host"
       fi
       ;;
     M) # Connect directly to the Bastion Host via SSH.
-      ssh $remote_user@$bastion -p $base_port 
+      ssh $remote_user@$selectedBastion -p $base_port 
       ;;
     X) # SOCKS Proxy: Set up dynamic port forwarding on port 5222.
       if [ $multiCon -eq 0 ]; then
-        ssh $remote_user@$bastion -p $base_port -tD 5222 \
+        ssh $remote_user@$selectedBastion -p $base_port -tD 5222 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the Proxy on \`tput setaf 2\` \$bastion \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 5222 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
-        nohup ssh $remote_user@$bastion -p $base_port -ND 5222 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -ND 5222 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -332,12 +332,12 @@ doConnection(){
     Z) # Wazuh Web Admin: Forward local port 5601 to remote.
       if [ $multiCon -eq 0 ]; then
         openWeb http://localhost:5601
-        ssh $remote_user@$bastion -p $base_port -tL 5601:$2:5601 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 5601:$2:5601 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 5601 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         openWeb http://localhost:5601
-        nohup ssh $remote_user@$bastion -p $base_port -NL 5601:$2:5601 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 5601:$2:5601 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -347,19 +347,19 @@ doConnection(){
       if [ $multiCon -eq 0 ]; then
         openWeb http://localhost:8080
         openWeb https://localhost:8443
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8080:$2:80 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8080:$2:80 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
-        ssh $remote_user@$bastion -p $base_port -tL 8443:$2:443 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 8443:$2:443 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8080 \`tput sgr0\` and \`tput setaf 2\` 8443 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         openWeb http://localhost:8080
         openWeb https://localhost:8443
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8080:$2:80 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8080:$2:80 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8443:$2:443 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8443:$2:443 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -368,11 +368,11 @@ doConnection(){
     D) # Portainer Connection: Forward local port 9000.
       if [ $multiCon -eq 0 ]; then
         openWeb http://localhost:9000
-        ssh $remote_user@$bastion -p $base_port -tL 9000:$2:9000 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 9000:$2:9000 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 9000 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
-        nohup ssh $remote_user@$bastion -p $base_port -NL 9000:$2:9000 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 9000:$2:9000 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -382,18 +382,18 @@ doConnection(){
     N) # Nessus Web Admin: Forward local ports 8834 and 8000.
       if [ $multiCon -eq 0 ]; then
         openWeb http://localhost:8000
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8834:$2:8834 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8834:$2:8834 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
-        ssh $remote_user@$bastion -p $base_port -tL 8000:$2:8000 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 8000:$2:8000 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8000 \`tput sgr0\` and \`tput setaf 2\` 8834 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         openWeb http://localhost:8000
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8834:$2:8834 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8834:$2:8834 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8000:$2:8000 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8000:$2:8000 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -402,12 +402,12 @@ doConnection(){
     J) # Tomcat Connection: Forward local port 8443.
       if [ $multiCon -eq 0 ]; then
         openWeb http://localhost:8443
-        ssh $remote_user@$bastion -p $base_port -tL 8443:$2:8443 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 8443:$2:8443 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8443 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         openWeb http://localhost:8443
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8443:$2:8443 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8443:$2:8443 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -415,11 +415,11 @@ doConnection(){
       ;;
     P) # MSDeploy Connection: Forward local port 8172 for website deployment.
       if [ $multiCon -eq 0 ]; then
-        ssh $remote_user@$bastion -p $base_port -tL 8172:$2:8172 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 8172:$2:8172 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 8172 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
-        nohup ssh $remote_user@$bastion -p $base_port -NL 8172:$2:8172 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 8172:$2:8172 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
@@ -427,19 +427,19 @@ doConnection(){
       ;;
     S) # SQL Server Management Studio: Forward local port 1433.
       if [ $multiCon -eq 0 ]; then
-        ssh $remote_user@$bastion -p $base_port -tL 1433:$2:1433 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL 1433:$2:1433 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` 1433 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
-        nohup ssh $remote_user@$bastion -p $base_port -NL 1433:$2:1433 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL 1433:$2:1433 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
       fi
       ;;
     T) # Sysadmin Toolbox: Forward local port for toolbox functions (5222).
-      ssh $remote_user@$bastion -p $base_port -fL $port:$2:5222 sleep 10 
-      if [ $(ps -ef | grep -v grep | grep -c "ssh $remote_user@$bastion -p $base_port -fL $port:$2:5222 sleep 10") -gt 1 ]; then
+      ssh $remote_user@$selectedBastion -p $base_port -fL $port:$2:5222 sleep 10 
+      if [ $(ps -ef | grep -c "ssh $remote_user@$selectedBastion -p $base_port -fL $port:$2:5222 sleep 10") -gt 1 ]; then
         ssh localhost -p $port -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
       else
         echo "Problem establishing connection to Bastion host"
@@ -456,12 +456,12 @@ doConnection(){
     *) # Default: Use the provided parameter as the port number for generic connections.
       if [ $multiCon -eq 0 ]; then
         openWeb http://localhost:$1
-        ssh $remote_user@$bastion -p $base_port -tL $1:$2:$1 \
+        ssh $remote_user@$selectedBastion -p $base_port -tL $1:$2:$1 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-          "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` \$1 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
+          "while [ true ]; do clear; echo The Bastion server name is \`tput setaf 2\` \$name \`tput sgr0\`; echo You are connected to the \`tput setaf 2\` \$2 \`tput sgr0\`; echo The Bastion Host is \`tput setaf 2\` \$bastion \`tput sgr0\`; echo Port being forwarded is \`tput setaf 2\` $1 \`tput sgr0\`; echo The current date and time is \`tput setaf 2\` \`date\` \`tput sgr0\`; echo ; echo Press ctrl+c to exit; sleep 1; done && exit"
       else
         openWeb http://localhost:$1
-        nohup ssh $remote_user@$bastion -p $base_port -NL $1:$2:$1 \
+        nohup ssh $remote_user@$selectedBastion -p $base_port -NL $1:$2:$1 \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           -o ServerAliveInterval=60 -o ServerAliveCountMax=3 > /dev/null &
         echo $! > .$(echo $port)-servers.pid
