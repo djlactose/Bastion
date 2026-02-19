@@ -425,6 +425,10 @@ def login():
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html')
 
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('login.html'), 404
+
 @app.errorhandler(429)
 def ratelimit_handler(e):
     flash('Too many attempts. Please wait before trying again.', 'danger')
