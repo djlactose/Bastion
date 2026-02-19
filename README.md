@@ -25,11 +25,14 @@ To run:
 ```bash
 docker run -d \
   -p 22:22 \
-  -p 8000:8000 \  # Optional web interface
+  -p 80:80 \
+  -p 443:443 \
+  -p 8000:8000 \
   -v /home:/home \
   -v /root/bastion:/root/bastion \
   -v /etc/bastion:/etc/bastion \
   -v /root/web/instance:/root/web/instance \
+  -v /var/log/bastion:/var/log/bastion \
   --name bastion djlactose/bastion
 ```
 
@@ -45,14 +48,13 @@ docker build -t bastion .
 
 Then run using the same instructions as above, replacing `djlactose/bastion` with `bastion`.
 
-### Minimal Setup (Non-Docker)
+### Client Connection Script (Non-Docker)
 
-To run Bastion outside of Docker:
+The `servers.sh` script is a client-side tool for connecting through the bastion host via SSH tunnels. To use it outside of Docker:
 
-1. Use `servers.sh` to start the service
-2. Configure it using `servers.conf`
-
-Other scripts are optional and assist with setup and development.
+1. Copy `servers.sh` to your local machine
+2. Run it and follow the prompts to configure your bastion host address and port
+3. A `servers.conf` configuration file will be downloaded from the bastion on first run
 
 ## Persistent Volumes
 
@@ -62,28 +64,43 @@ For proper operation and data persistence, mount the following directories:
 - `/root/bastion`
 - `/etc/bastion`
 - `/root/web/instance` *(only needed if using the web interface)*
+- `/var/log/bastion` *(Gunicorn access and error logs)*
 
 ## Ports
 
-| Port | Purpose                                 |
-|------|-----------------------------------------|
-| 22   | SSH entry point to the bastion          |
-| 8000 | (Optional) Web interface for session access (Beta) |
+| Port | Purpose                                              |
+|------|------------------------------------------------------|
+| 22   | SSH entry point to the bastion                       |
+| 80   | HTTP (Nginx, only active with TLS certificates)      |
+| 443  | HTTPS (Nginx, only active with TLS certificates)     |
+| 8000 | Web interface for session access (direct, no TLS)    |
 
-## Development Environment
+## TLS/HTTPS (Optional)
 
-This project includes `.devcontainer` support for Visual Studio Code to simplify setting up a consistent development environment.
+To enable HTTPS via Nginx, place your TLS certificates in the `/etc/bastion/certs/` volume:
+
+- `fullchain.pem`
+- `privkey.pem`
+
+When certificates are present, Nginx serves HTTPS on port 443 and the web interface binds to `127.0.0.1:8000` internally. Without certificates, the web interface is accessible directly on port 8000.
+
+## Environment Variables
+
+| Variable           | Default | Description                        |
+|--------------------|---------|------------------------------------|
+| `GUNICORN_WORKERS` | `2`     | Number of Gunicorn worker processes |
 
 ## File Overview
 
-| File/Script            | Purpose                                                  |
+| File/Directory         | Purpose                                                  |
 |------------------------|----------------------------------------------------------|
-| `servers.sh`           | Main startup script for the bastion host                |
-| `servers.conf`         | Bastion configuration file                              |
-| `run.sh`               | Script to initialize services or run the container      |
-| `docker publish.ps1`   | PowerShell script to publish Docker image               |
-| `.devcontainer/`       | VSCode development container configuration              |
-| `Dockerfile`           | Docker build instructions for the bastion image         |
+| `Dockerfile`           | Docker build instructions for the bastion image          |
+| `run.sh`               | Container entrypoint: initializes SSH keys, starts Gunicorn and SSHD |
+| `servers.sh`           | Client-side connection and tunneling script               |
+| `docker publish.ps1`   | PowerShell script to build and publish Docker image       |
+| `config/`              | SSH, PAM, Nginx, and sudoers configuration files          |
+| `utils/`               | User management, backup/restore, and upgrade scripts      |
+| `web/`                 | Flask web interface application                           |
 
 ## License
 
