@@ -47,7 +47,8 @@ COPY web/wsgi.py /root/web/wsgi.py
 
 RUN apt update && \
 apt upgrade -y && \
-apt install -y -o Dpkg::Options::="--force-confold" python3-venv gunicorn openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd nginx jq && \
+apt install -y -o Dpkg::Options::="--force-confold" python3-venv openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd nginx jq && \
+apt-get purge -y --auto-remove python3-cryptography && \
 python3 -m venv /opt/venv && \
 export PATH="/opt/venv/bin:$PATH" && \
 pip3 install -U pip && \
