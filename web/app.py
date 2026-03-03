@@ -17,7 +17,7 @@ from logging.handlers import RotatingFileHandler
 app = Flask(__name__)
 
 # Fix #1: File-based persistent SECRET_KEY
-secret_key_path = '/root/bastion/secret_key'
+secret_key_path = '/var/lib/bastion/secret_key'
 if os.path.exists(secret_key_path):
     with open(secret_key_path, 'r') as f:
         app.config['SECRET_KEY'] = f.read().strip()
@@ -26,17 +26,18 @@ else:
     os.makedirs(os.path.dirname(secret_key_path), exist_ok=True)
     with open(secret_key_path, 'w') as f:
         f.write(generated_key)
+    os.chmod(secret_key_path, 0o600)
     app.config['SECRET_KEY'] = generated_key
 
 # Database: use persistent volume, auto-migrate from old location
-new_db_path = '/root/bastion/users.db'
+new_db_path = '/var/lib/bastion/users.db'
 old_db_path = os.path.join(app.instance_path, 'users.db')
 if os.path.exists(old_db_path) and not os.path.exists(new_db_path):
     import shutil
     os.makedirs(os.path.dirname(new_db_path), exist_ok=True)
     shutil.copy2(old_db_path, new_db_path)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////root/bastion/users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/lib/bastion/users.db'
 app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30 minute session timeout
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -51,6 +52,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Secure cookie settings
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.path.exists('/etc/bastion/certs/fullchain.pem')
 
 # Rate limiting
 limiter = Limiter(
@@ -261,9 +263,12 @@ def migrate_conf_to_json():
         with open(config_file_json, 'w') as f:
             json.dump(config_data, f, indent=4)
 
-# Fix #2: Initialize database once at startup instead of every request
+# Initialize database (handle race condition with multiple gunicorn workers)
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception:
+        pass
 
 # Auto-migrate legacy .conf to .json on startup
 migrate_conf_to_json()
@@ -691,8 +696,8 @@ def add_system_user():
             return render_template('add_system_user.html')
 
         result = subprocess.run(
-            ['sudo', '/root/bin/adduser.sh', username, password],
-            capture_output=True, text=True, timeout=30
+            ['sudo', '/root/bin/adduser.sh', username],
+            input=password, capture_output=True, text=True, timeout=30
         )
 
         if result.returncode != 0:

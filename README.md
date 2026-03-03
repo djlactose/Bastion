@@ -31,7 +31,7 @@ docker run -d \
   -v /home:/home \
   -v /root/bastion:/root/bastion \
   -v /etc/bastion:/etc/bastion \
-  -v /root/web/instance:/root/web/instance \
+  -v /var/lib/bastion:/var/lib/bastion \
   -v /var/log/bastion:/var/log/bastion \
   --name bastion djlactose/bastion
 ```
@@ -60,11 +60,13 @@ The `servers.sh` script is a client-side tool for connecting through the bastion
 
 For proper operation and data persistence, mount the following directories:
 
-- `/home`
-- `/root/bastion`
-- `/etc/bastion`
-- `/root/web/instance` *(only needed if using the web interface)*
-- `/var/log/bastion` *(Gunicorn access and error logs)*
+- `/home` — user home directories
+- `/root/bastion` — SSH host keys and user account backups
+- `/etc/bastion` — server configuration, TLS certificates
+- `/var/lib/bastion` — web interface database and secret key
+- `/var/log/bastion` — Gunicorn access and error logs
+
+> **Upgrading from older versions:** If you previously used `/root/web/instance` for web data, it has been replaced by `/var/lib/bastion`. On first startup, existing data (`users.db`, `secret_key`) is automatically migrated from `/root/bastion/` to `/var/lib/bastion/`.
 
 ## Ports
 
@@ -83,6 +85,13 @@ To enable HTTPS via Nginx, place your TLS certificates in the `/etc/bastion/cert
 - `privkey.pem`
 
 When certificates are present, Nginx serves HTTPS on port 443 and the web interface binds to `127.0.0.1:8000` internally. Without certificates, the web interface is accessible directly on port 8000.
+
+## Security
+
+- The web interface (Gunicorn/Flask) runs as `www-data`, not root. Web app data is isolated in `/var/lib/bastion/` with restricted ownership.
+- SSHD and Nginx run as root (required for privileged ports, PAM authentication, and user management).
+- Session cookies are marked `Secure` when TLS certificates are present.
+- Docker image builds include SBOM and provenance attestations for supply chain verification.
 
 ## Environment Variables
 

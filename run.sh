@@ -26,6 +26,17 @@ cp /root/bin/servers.conf-sample /etc/bastion/
 cp /root/bin/servers.json-sample /etc/bastion/
 export PATH="/opt/venv/bin:$PATH"
 
+# Migrate web app data from old volume to new volume (one-time)
+if [ -f /root/bastion/users.db ] && [ ! -f /var/lib/bastion/users.db ]; then
+    cp /root/bastion/users.db /var/lib/bastion/users.db
+    echo "Migrated users.db to /var/lib/bastion/"
+fi
+if [ -f /root/bastion/secret_key ] && [ ! -f /var/lib/bastion/secret_key ]; then
+    cp /root/bastion/secret_key /var/lib/bastion/secret_key
+    echo "Migrated secret_key to /var/lib/bastion/"
+fi
+chown -R www-data:www-data /var/lib/bastion /var/log/bastion
+
 # Configurable Gunicorn workers (default: 2)
 GUNICORN_WORKERS=${GUNICORN_WORKERS:-2}
 if ! [[ "$GUNICORN_WORKERS" =~ ^[0-9]+$ ]] || [ "$GUNICORN_WORKERS" -lt 1 ]; then
@@ -33,20 +44,23 @@ if ! [[ "$GUNICORN_WORKERS" =~ ^[0-9]+$ ]] || [ "$GUNICORN_WORKERS" -lt 1 ]; the
     GUNICORN_WORKERS=2
 fi
 
+# Switch to accessible directory before running gunicorn as www-data
+cd /
+
 # Remove stale gunicorn control socket if present
-rm -f /root/web/gunicorn.ctl
+rm -f /tmp/gunicorn.ctl
 
 # Common Gunicorn options
-GUNICORN_OPTS="--error-logfile /var/log/bastion/gunicorn-error.log --access-logfile /var/log/bastion/gunicorn-access.log"
+GUNICORN_OPTS="--error-logfile /var/log/bastion/gunicorn-error.log --access-logfile /var/log/bastion/gunicorn-access.log --control-socket /tmp/gunicorn.ctl"
 
-# Start Gunicorn and optionally Nginx for HTTPS
+# Start Gunicorn as www-data and optionally Nginx for HTTPS
 if [ -f "/etc/bastion/certs/fullchain.pem" ] && [ -f "/etc/bastion/certs/privkey.pem" ]; then
     echo "TLS certificates found. Starting Nginx with HTTPS on port 443."
-    gunicorn -w "$GUNICORN_WORKERS" -b 127.0.0.1:8000 --daemon --chdir /root/web/ $GUNICORN_OPTS wsgi:app
+    su -s /bin/bash www-data -c "/opt/venv/bin/gunicorn -w $GUNICORN_WORKERS -b 127.0.0.1:8000 --daemon --chdir /opt/bastion/web/ $GUNICORN_OPTS wsgi:app"
     nginx
 else
     echo "No TLS certificates found at /etc/bastion/certs/. Running without HTTPS on port 8000."
-    gunicorn -w "$GUNICORN_WORKERS" -b 0.0.0.0:8000 --daemon --chdir /root/web/ $GUNICORN_OPTS wsgi:app
+    su -s /bin/bash www-data -c "/opt/venv/bin/gunicorn -w $GUNICORN_WORKERS -b 0.0.0.0:8000 --daemon --chdir /opt/bastion/web/ $GUNICORN_OPTS wsgi:app"
 fi
 
 # Verify Gunicorn started successfully
@@ -56,9 +70,9 @@ if ! pgrep -f "gunicorn.*wsgi:app" > /dev/null; then
     cat /var/log/bastion/gunicorn-error.log 2>/dev/null
     echo "Retrying Gunicorn startup..."
     if [ -f "/etc/bastion/certs/fullchain.pem" ] && [ -f "/etc/bastion/certs/privkey.pem" ]; then
-        gunicorn -w "$GUNICORN_WORKERS" -b 127.0.0.1:8000 --daemon --chdir /root/web/ $GUNICORN_OPTS wsgi:app
+        su -s /bin/bash www-data -c "/opt/venv/bin/gunicorn -w $GUNICORN_WORKERS -b 127.0.0.1:8000 --daemon --chdir /opt/bastion/web/ $GUNICORN_OPTS wsgi:app"
     else
-        gunicorn -w "$GUNICORN_WORKERS" -b 0.0.0.0:8000 --daemon --chdir /root/web/ $GUNICORN_OPTS wsgi:app
+        su -s /bin/bash www-data -c "/opt/venv/bin/gunicorn -w $GUNICORN_WORKERS -b 0.0.0.0:8000 --daemon --chdir /opt/bastion/web/ $GUNICORN_OPTS wsgi:app"
     fi
     sleep 2
     if pgrep -f "gunicorn.*wsgi:app" > /dev/null; then

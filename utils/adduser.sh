@@ -12,7 +12,8 @@ if id "$user" >/dev/null 2>&1; then
 fi
 
 useradd -m "$user"
-if [ -z "$2" ]; then
+if [ -t 0 ]; then
+    # Interactive: prompt for password
     while true
     do
         read -s -p "Please enter the password: " pass
@@ -23,12 +24,14 @@ if [ -z "$2" ]; then
         fi
     done
 else
-    pass="$2"
+    # Non-interactive: read password from stdin (e.g. web UI)
+    read -r pass
 fi
 ln -s /etc/bastion/servers.conf "/home/$user/servers.conf"
 ln -s /etc/bastion/servers.sh "/home/$user/servers.sh"
 # Capture Google Authenticator QR code output for web UI display
-sudo -u "$user" google-authenticator -C -t -d -f -r 4 -R 30 -w 4 -Q UTF8 | tee "/tmp/ga_qr_${user}.txt"
+touch "/tmp/ga_qr_${user}.txt"
 chmod 600 "/tmp/ga_qr_${user}.txt"
+sudo -u "$user" google-authenticator -C -t -d -f -r 4 -R 30 -w 4 -Q UTF8 | tee "/tmp/ga_qr_${user}.txt"
 echo "$user:$pass" | chpasswd
 /root/bin/BackupUsers.sh

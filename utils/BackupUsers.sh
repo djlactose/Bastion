@@ -12,6 +12,6 @@ else
     echo "WARNING: /var/spool/mail not found, skipping"
 fi
 # Backup web UI database
-if [ -f /root/bastion/users.db ]; then
-    \cp -P /root/bastion/users.db /root/bastion/users.db.bak || echo "WARNING: Failed to backup users.db"
+if [ -f /var/lib/bastion/users.db ]; then
+    \cp -P /var/lib/bastion/users.db /var/lib/bastion/users.db.bak || echo "WARNING: Failed to backup users.db"
 fi
