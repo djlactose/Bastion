@@ -2,6 +2,12 @@
 if [ -f "/root/bastion/passwd" ]
 then
   /root/bin/upgrade.sh
+  # Ensure www-data exists after user restore (required for gunicorn/nginx)
+  if ! id www-data >/dev/null 2>&1; then
+      groupadd -r www-data 2>/dev/null || true
+      useradd -r -g www-data -s /usr/sbin/nologin -d /var/www www-data 2>/dev/null || true
+      echo "Re-created www-data user after upgrade restore."
+  fi
 else
   rm -f /etc/ssh/ssh_host_rsa_key
   rm -f /etc/ssh/ssh_host_ecdsa_key

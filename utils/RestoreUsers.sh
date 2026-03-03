@@ -12,6 +12,9 @@ else
     echo "WARNING: /root/bastion/mail not found, skipping"
 fi
 # Restore web UI database backup if primary is missing
-if [ -f /root/bastion/users.db.bak ] && [ ! -f /root/bastion/users.db ]; then
-    \cp -P /root/bastion/users.db.bak /root/bastion/users.db || echo "WARNING: Failed to restore users.db"
+if [ -f /root/bastion/users.db.bak ] && [ ! -f /var/lib/bastion/users.db ]; then
+    \cp -P /root/bastion/users.db.bak /var/lib/bastion/users.db || echo "WARNING: Failed to restore users.db"
+fi
+if [ -f /var/lib/bastion/users.db.bak ] && [ ! -f /var/lib/bastion/users.db ]; then
+    \cp -P /var/lib/bastion/users.db.bak /var/lib/bastion/users.db || echo "WARNING: Failed to restore users.db"
 fi
