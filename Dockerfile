@@ -51,7 +51,7 @@ apt install -y -o Dpkg::Options::="--force-confold" python3-venv gunicorn openss
 python3 -m venv /opt/venv && \
 export PATH="/opt/venv/bin:$PATH" && \
 pip3 install -U pip && \
-pip3 install jinja2 cryptography flask-login flask-sqlalchemy flask flask-wtf gunicorn flask-limiter && \
+pip3 install jinja2 "cryptography>=46.0.5" flask-login flask-sqlalchemy "flask>=3.1.3" "werkzeug>=3.1.6" flask-wtf gunicorn flask-limiter && \
 mkdir -p /root/bastion && \
 chmod 700 /root/bastion/ && \
 mkdir -p /var/log/bastion && \
