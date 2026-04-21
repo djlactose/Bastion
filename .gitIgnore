@@ -1,6 +1,7 @@
 servers.conf
 .devcontainer/
-.github/
+.github/*
+!.github/workflows/
 __pycache__/
 web/instance/
 .claude/
