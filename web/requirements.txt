@@ -10,7 +10,7 @@
 #   echo '<top-level package list from Dockerfile>' > web/requirements.in
 #   pip-compile --generate-hashes --output-file web/requirements.txt web/requirements.in
 # Then update the Dockerfile pip install to use `--require-hashes`.
-cryptography==46.0.5
+cryptography==46.0.7
 flask==3.1.3
 flask-limiter==3.10.1
 flask-login==0.6.3
