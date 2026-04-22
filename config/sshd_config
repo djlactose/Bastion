@@ -36,6 +36,17 @@ PermitRootLogin no
 MaxAuthTries 3
 #MaxSessions 10
 
+# NOTE on OpenSSH 10 (Ubuntu 25.10+): `PerSourcePenalties yes` becomes the
+# default and silently drops connections from any source IP that has
+# accumulated auth failures. On bastion hosts that blocks legitimate users
+# whose workstation shares NAT with a scanner — very common on corporate
+# networks. Bastion is pinned to ubuntu:24.04 (OpenSSH 9.7) precisely to
+# avoid this class of surprise. If you ever bump the base to a release
+# shipping OpenSSH >=10, uncomment the line below (older sshd versions
+# reject unknown directives at parse time, so do NOT leave it uncommented
+# on OpenSSH 9.x):
+# PerSourcePenalties no
+
 #PubkeyAuthentication yes
 
 # Expect .ssh/authorized_keys2 to be disregarded by default in future.

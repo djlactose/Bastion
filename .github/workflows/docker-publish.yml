@@ -2,7 +2,7 @@ name: Build and publish Bastion image
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
   workflow_dispatch:
 
 permissions: {}
@@ -43,9 +43,15 @@ jobs:
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: djlactose/bastion
+          # Branch routing:
+          #   master  -> :latest, :ubuntu  (production rollouts pull these)
+          #   develop -> :beta             (beta testers pull this)
+          # Every build also publishes :sha-<commit> for digest-pinnable
+          # rollbacks regardless of branch.
           tags: |
-            type=raw,value=latest
-            type=raw,value=ubuntu
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=ubuntu,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=beta,enable=${{ github.ref == 'refs/heads/develop' }}
             type=sha,format=long
 
       - name: Build and push image

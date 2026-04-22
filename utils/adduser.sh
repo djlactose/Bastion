@@ -29,9 +29,15 @@ else
 fi
 ln -s /etc/bastion/servers.conf "/home/$user/servers.conf"
 ln -s /etc/bastion/servers.sh "/home/$user/servers.sh"
-# Capture Google Authenticator QR code output for web UI display
-touch "/tmp/ga_qr_${user}.txt"
-chmod 600 "/tmp/ga_qr_${user}.txt"
-sudo -u "$user" google-authenticator -C -t -d -f -r 4 -R 30 -w 4 -Q UTF8 | tee "/tmp/ga_qr_${user}.txt"
+# Capture Google Authenticator QR code output for web UI display.
+# Create the file O_EXCL-style to defeat a pre-existing symlink: rm any prior
+# entry, then noclobber-create with a restrictive umask so chmod races can't
+# redirect root writes to an arbitrary file.
+qr="/tmp/ga_qr_${user}.txt"
+rm -f -- "$qr"
+( umask 177 && set -C && : > "$qr" ) || { echo "Failed to create $qr safely" >&2; exit 1; }
+ga_output=$(sudo -u "$user" google-authenticator -C -t -d -f -r 4 -R 30 -w 4 -Q UTF8)
+printf '%s\n' "$ga_output" > "$qr"
+printf '%s\n' "$ga_output"
 echo "$user:$pass" | chpasswd
 /root/bin/BackupUsers.sh

@@ -1,0 +1,21 @@
+# Pinned Python dependencies for the Bastion web app.
+#
+# These pins exist for supply-chain defense: without them, `docker build
+# --no-cache` pulls whatever is "latest" at build time, exposing the image
+# to typosquat / compromised-release attacks and making two consecutive
+# builds non-reproducible.
+#
+# To regenerate with transitive-dep hash pinning:
+#   pip install pip-tools
+#   echo '<top-level package list from Dockerfile>' > web/requirements.in
+#   pip-compile --generate-hashes --output-file web/requirements.txt web/requirements.in
+# Then update the Dockerfile pip install to use `--require-hashes`.
+cryptography==46.0.5
+flask==3.1.3
+flask-limiter==3.10.1
+flask-login==0.6.3
+flask-sqlalchemy==3.1.1
+flask-wtf==1.2.2
+gunicorn==23.0.0
+jinja2==3.1.6
+werkzeug==3.1.6

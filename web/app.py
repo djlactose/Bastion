@@ -16,13 +16,21 @@ from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 
-# Fix #1: File-based persistent SECRET_KEY
+# Fix #1: File-based persistent SECRET_KEY.
+# web/migrate.py (invoked from run.sh before gunicorn starts) rotates an
+# under-sized key in place and leaves the previous key at secret_key.old so
+# Flask's SECRET_KEY_FALLBACKS can still unsign in-flight sessions and CSRF
+# tokens during the grace window.
 secret_key_path = '/var/lib/bastion/secret_key'
+secret_key_fallback_path = '/var/lib/bastion/secret_key.old'
 if os.path.exists(secret_key_path):
     with open(secret_key_path, 'r') as f:
         app.config['SECRET_KEY'] = f.read().strip()
+    if os.path.exists(secret_key_fallback_path):
+        with open(secret_key_fallback_path, 'r') as f:
+            app.config['SECRET_KEY_FALLBACKS'] = [f.read().strip()]
 else:
-    generated_key = os.urandom(24).hex()
+    generated_key = os.urandom(32).hex()
     os.makedirs(os.path.dirname(secret_key_path), exist_ok=True)
     with open(secret_key_path, 'w') as f:
         f.write(generated_key)
@@ -78,11 +86,21 @@ audit_handler.setFormatter(logging.Formatter(
 ))
 audit_logger.addHandler(audit_handler)
 
+_AUDIT_UNSAFE = re.compile(r'[\x00-\x1f\x7f]')
+
+def _audit_scrub(value):
+    """Collapse control characters so an attacker-controlled field can't forge
+    a new log line or smuggle tab/backspace/escape sequences into the log."""
+    return _AUDIT_UNSAFE.sub('?', str(value))
+
 def audit_log(action, details=''):
     """Log an admin action with the current user context."""
-    user = current_user.username if current_user.is_authenticated else 'anonymous'
+    user = _audit_scrub(current_user.username) if current_user.is_authenticated else 'anonymous'
     ip = request.remote_addr or 'unknown'
-    audit_logger.info(f'user={user} ip={ip} action={action} {details}'.strip())
+    ua = _audit_scrub((request.headers.get('User-Agent') or '-')[:200])
+    audit_logger.info(
+        f'user={user} ip={ip} ua="{ua}" action={action} {_audit_scrub(details)}'.strip()
+    )
 
 # User model
 class User(UserMixin, db.Model):
@@ -107,10 +125,18 @@ def sanitize_shell_input(value):
         return None
     return value
 
+_HOST_CHARS = re.compile(r'^[a-zA-Z0-9._-]+$')
+
 def validate_ip_or_hostname(value):
-    """Validate that value looks like an IP address or hostname."""
-    pattern = re.compile(r'^[a-zA-Z0-9._-]+$')
-    return pattern.match(value) is not None
+    """Validate that value looks like an IP address or hostname.
+    Accepts everything the original character-class check accepted, but caps
+    length at the RFC 1035 / 1123 limit and rejects pathological inputs that
+    contain consecutive dots (which can't correspond to any real host)."""
+    if not value or len(value) > 253:
+        return False
+    if '..' in value:
+        return False
+    return _HOST_CHARS.match(value) is not None
 
 def validate_port(value):
     """Validate that value is a numeric port."""
@@ -701,7 +727,8 @@ def add_system_user():
         )
 
         if result.returncode != 0:
-            flash(f'Failed to create system user: {result.stderr}', 'danger')
+            audit_log('SYSTEM_USER_CREATE_FAILED', f'target_user={username} stderr={result.stderr!r}')
+            flash('Failed to create system user. See audit log for details.', 'danger')
             return render_template('add_system_user.html')
 
         audit_log('SYSTEM_USER_CREATED', f'target_user={username}')
@@ -752,7 +779,8 @@ def delete_system_user(username):
     )
 
     if result.returncode != 0:
-        flash(f'Failed to delete system user: {result.stderr}', 'danger')
+        audit_log('SYSTEM_USER_DELETE_FAILED', f'target_user={username} stderr={result.stderr!r}')
+        flash('Failed to delete system user. See audit log for details.', 'danger')
     else:
         audit_log('SYSTEM_USER_DELETED', f'target_user={username}')
         flash(f'System user "{username}" deleted successfully!', 'success')
@@ -794,7 +822,8 @@ def reset_system_password(username):
         )
 
         if result.returncode != 0:
-            flash(f'Failed to reset password: {result.stderr}', 'danger')
+            audit_log('SYSTEM_USER_PASSWORD_RESET_FAILED', f'target_user={username} stderr={result.stderr!r}')
+            flash('Failed to reset password. See audit log for details.', 'danger')
             return render_template('reset_system_password.html', username=username)
 
         audit_log('SYSTEM_USER_PASSWORD_RESET', f'target_user={username}')

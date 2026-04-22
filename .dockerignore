@@ -1,0 +1,27 @@
+.git
+.gitignore
+.gitattributes
+.github
+.claude
+.devcontainer
+.vscode
+.idea
+*.md
+!README.md
+docker publish.ps1
+LICENSE
+
+# Python artifacts that may land in the context if contributors run tests locally
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+.pytest_cache
+.mypy_cache
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~

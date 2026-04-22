@@ -1,5 +1,9 @@
 #Docker Image to spin up a Bastion Server
-FROM ubuntu:25.10
+# Pinned to Ubuntu 24.04 LTS (supported through April 2029) for stability.
+# Do NOT bump to a non-LTS release without validating: OpenSSH 10 in 25.10
+# enabled PerSourcePenalties by default and silently blocked legitimate
+# users behind shared NAT egress.
+FROM ubuntu:24.04
 
 EXPOSE 22
 EXPOSE 80
@@ -25,6 +29,7 @@ COPY utils/upgrade.sh /root/bin/upgrade.sh
 COPY utils/adduser.sh /root/bin/adduser.sh
 COPY utils/deluser.sh /root/bin/deluser.sh
 COPY utils/resetpw.sh /root/bin/resetpw.sh
+COPY utils/rotate-host-keys.sh /root/bin/rotate-host-keys.sh
 COPY servers.sh /root/bin/servers.sh
 COPY config/servers.conf-sample /root/bin/servers.conf-sample
 COPY config/servers.json-sample /root/bin/servers.json-sample
@@ -44,15 +49,17 @@ COPY web/templates/system_user_qr.html /opt/bastion/web/templates/system_user_qr
 COPY web/templates/reset_system_password.html /opt/bastion/web/templates/reset_system_password.html
 COPY web/app.py /opt/bastion/web/app.py
 COPY web/wsgi.py /opt/bastion/web/wsgi.py
+COPY web/migrate.py /opt/bastion/web/migrate.py
+COPY web/requirements.txt /opt/bastion/web/requirements.txt
 
-RUN apt update && \
-apt upgrade -y && \
-apt install -y -o Dpkg::Options::="--force-confold" python3-venv openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd nginx jq && \
+RUN apt-get update && \
+apt-get upgrade -y && \
+apt-get install -y -o Dpkg::Options::="--force-confold" python3-venv openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd nginx jq && \
 apt-get purge -y --auto-remove python3-cryptography && \
 python3 -m venv /opt/venv && \
 export PATH="/opt/venv/bin:$PATH" && \
 pip3 install -U pip && \
-pip3 install jinja2 "cryptography>=46.0.5" flask-login flask-sqlalchemy "flask>=3.1.3" "werkzeug>=3.1.6" flask-wtf gunicorn flask-limiter && \
+pip3 install -r /opt/bastion/web/requirements.txt && \
 mkdir -p /root/bastion && \
 chmod 700 /root/bastion/ && \
 mkdir -p /var/lib/bastion && \
@@ -62,6 +69,7 @@ chown www-data:www-data /var/log/bastion && \
 chmod 755 /root/bin/adduser.sh && \
 chmod 755 /root/bin/deluser.sh && \
 chmod 755 /root/bin/resetpw.sh && \
+chmod 755 /root/bin/rotate-host-keys.sh && \
 chmod 755 /root/bin/run.sh && \
 chmod 755 /root/bin/BackupUsers.sh && \
 chmod 755 /root/bin/RestoreUsers.sh && \
