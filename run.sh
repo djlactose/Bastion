@@ -88,11 +88,8 @@ su -s /bin/bash www-data -c "/opt/venv/bin/python /opt/bastion/web/migrate.py" |
 # Switch to accessible directory before running gunicorn as www-data
 cd /
 
-# Remove stale gunicorn control socket if present
-rm -f /tmp/gunicorn.ctl
-
 # Common Gunicorn options
-GUNICORN_OPTS="--error-logfile /var/log/bastion/gunicorn-error.log --access-logfile /var/log/bastion/gunicorn-access.log --control-socket /tmp/gunicorn.ctl"
+GUNICORN_OPTS="--error-logfile /var/log/bastion/gunicorn-error.log --access-logfile /var/log/bastion/gunicorn-access.log"
 
 # Start Gunicorn as www-data and optionally Nginx for HTTPS
 if [ -f "/etc/bastion/certs/fullchain.pem" ] && [ -f "/etc/bastion/certs/privkey.pem" ]; then

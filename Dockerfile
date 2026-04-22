@@ -71,6 +71,7 @@ chmod 755 /root/bin/deluser.sh && \
 chmod 755 /root/bin/resetpw.sh && \
 chmod 755 /root/bin/rotate-host-keys.sh && \
 chmod 755 /root/bin/run.sh && \
+chmod 755 /root/bin/upgrade.sh && \
 chmod 755 /root/bin/BackupUsers.sh && \
 chmod 755 /root/bin/RestoreUsers.sh && \
 chmod 644 /root/bin/servers.conf-sample && \
