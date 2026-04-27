@@ -38,8 +38,10 @@ exitTerm=0
 # Flag for allowing multiple simultaneous connections
 multiCon=0     
 
-# Generate a unique starting port number using the current PID offset by 10000
-port=`expr $$ + 10000`
+# Generate a unique starting port number using the current PID offset by 10000.
+# Modulo keeps the result in 10000-59999 so it never exceeds the 65535 TCP port
+# limit, even when the kernel's pid_max allows large PIDs.
+port=$(( ($$ % 50000) + 10000 ))
 
 # Default menu command (will be set later to either 'dialog' or 'whiptail')
 menuCom="whiptail"  
@@ -574,8 +576,9 @@ while [ $exitstatus -eq 0 ]; do
     ip=`echo "$OPTION" | cut -d "_" -f 1`
     # Establish the connection
     doConnection $stype $ip
-    # Increment port for the next connection
-    port=`expr $port + 1`
+    # Increment port for the next connection, wrapping back into 10000-59999
+    # so we never run off the end of the valid TCP port range.
+    port=$(( ((port - 10000 + 1) % 50000) + 10000 ))
     if [ $multiCon -eq 0 ]; then
       exitstatus=1
     fi
