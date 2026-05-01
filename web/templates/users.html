@@ -25,6 +25,9 @@
                             {% if user.id == current_user.id %}
                                 <span class="badge bg-info ms-1">You</span>
                             {% endif %}
+                            {% if user.force_password_change %}
+                                <span class="badge bg-warning text-dark ms-1" title="Must change password on next sign-in">Must change pw</span>
+                            {% endif %}
                         </td>
                         <td>
                             {% if user.is_admin %}

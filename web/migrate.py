@@ -11,12 +11,14 @@ gracefully.
 from __future__ import annotations
 
 import os
+import sqlite3
 import sys
 import time
 
 
 SECRET_KEY_PATH = '/var/lib/bastion/secret_key'
 SECRET_KEY_OLD_PATH = '/var/lib/bastion/secret_key.old'
+USERS_DB_PATH = '/var/lib/bastion/users.db'
 
 # 32 bytes, hex-encoded, is 64 characters. Anything shorter is a pre-L1 key
 # (older containers generated 24 bytes / 48 hex chars).
@@ -91,9 +93,47 @@ def rotate_secret_key() -> None:
     )
 
 
+def add_force_password_change_column() -> None:
+    """Add User.force_password_change column to an existing users.db.
+
+    Idempotent: skips when DB/table absent (fresh install — db.create_all() in
+    app.py will create with the column already in the model) or when the
+    column already exists.
+    """
+    if not os.path.exists(USERS_DB_PATH):
+        return
+    try:
+        con = sqlite3.connect(USERS_DB_PATH)
+        try:
+            cur = con.cursor()
+            cur.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='user'"
+            )
+            if not cur.fetchone():
+                return
+            cur.execute("PRAGMA table_info(user)")
+            cols = {row[1] for row in cur.fetchall()}
+            if 'force_password_change' in cols:
+                return
+            cur.execute(
+                "ALTER TABLE user ADD COLUMN force_password_change "
+                "BOOLEAN NOT NULL DEFAULT 0"
+            )
+            con.commit()
+            _log('added User.force_password_change column')
+        finally:
+            con.close()
+    except Exception as exc:  # noqa: BLE001 — must not block container start
+        _log(f'force_password_change migration failed: {exc!r}')
+
+
 def main() -> None:
     try:
         rotate_secret_key()
+    except Exception as exc:  # noqa: BLE001 — must not block container start
+        _log(f'unexpected error: {exc!r}')
+    try:
+        add_force_password_change_column()
     except Exception as exc:  # noqa: BLE001 — must not block container start
         _log(f'unexpected error: {exc!r}')
 

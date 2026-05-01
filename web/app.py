@@ -108,10 +108,15 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    # Column added by web/migrate.py for existing DBs; created in-place by
+    # db.create_all() for fresh DBs. Default False preserves prior behavior.
+    force_password_change = db.Column(db.Boolean, default=False, nullable=False)
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+_FORCE_PW_ALLOWED_ENDPOINTS = frozenset({'change_password', 'logout', 'login', 'static'})
 
 # Configuration file paths
 config_file = '/etc/bastion/servers.conf'
@@ -519,11 +524,21 @@ def register():
             flash('Username already exists.', 'danger')
             return render_template('register.html')
         is_admin = 'is_admin' in request.form
+        force_pw_change = 'force_password_change' in request.form
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        user = User(username=username, password=hashed_password, is_admin=is_admin)
+        user = User(
+            username=username,
+            password=hashed_password,
+            is_admin=is_admin,
+            force_password_change=force_pw_change,
+        )
         db.session.add(user)
         db.session.commit()
-        audit_log('USER_CREATED', f'target_user={username} is_admin={is_admin}')
+        audit_log(
+            'USER_CREATED',
+            f'target_user={username} is_admin={is_admin} '
+            f'force_password_change={force_pw_change}',
+        )
         flash(f'Account created for {username}!', 'success')
         return redirect(url_for('index'))
     return render_template('register.html')
@@ -540,32 +555,46 @@ def refresh_session():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=30)
 
+@app.before_request
+def enforce_forced_password_change():
+    if not current_user.is_authenticated:
+        return
+    if not getattr(current_user, 'force_password_change', False):
+        return
+    if request.endpoint is None or request.endpoint in _FORCE_PW_ALLOWED_ENDPOINTS:
+        return
+    return redirect(url_for('change_password'))
+
 @app.route('/change-password', methods=['GET', 'POST'])
+@limiter.limit("10 per minute", methods=["POST"])
 @login_required
 def change_password():
+    forced = bool(current_user.force_password_change)
     if request.method == 'POST':
         current_pw = request.form['current_password']
         new_pw = request.form['password']
         confirm_pw = request.form.get('confirm_password', '')
         if not check_password_hash(current_user.password, current_pw):
             flash('Current password is incorrect.', 'danger')
-            return render_template('change_password.html')
+            return render_template('change_password.html', forced=forced)
         if new_pw != confirm_pw:
             flash('New passwords do not match.', 'danger')
-            return render_template('change_password.html')
+            return render_template('change_password.html', forced=forced)
         if not new_pw:
             flash('New password cannot be empty.', 'danger')
-            return render_template('change_password.html')
+            return render_template('change_password.html', forced=forced)
         valid, msg = validate_password(new_pw)
         if not valid:
             flash(msg, 'danger')
-            return render_template('change_password.html')
+            return render_template('change_password.html', forced=forced)
         current_user.password = generate_password_hash(new_pw, method='pbkdf2:sha256')
+        was_forced = forced
+        current_user.force_password_change = False
         db.session.commit()
-        audit_log('PASSWORD_CHANGED')
+        audit_log('PASSWORD_CHANGED', f'forced={was_forced}')
         flash('Password changed successfully!', 'success')
         return redirect(url_for('index'))
-    return render_template('change_password.html')
+    return render_template('change_password.html', forced=forced)
 
 @app.route('/users')
 @login_required
@@ -599,11 +628,21 @@ def add_user():
             flash('Username already exists.', 'danger')
             return render_template('add_user.html')
         is_admin = 'is_admin' in request.form
+        force_pw_change = 'force_password_change' in request.form
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        user = User(username=username, password=hashed_password, is_admin=is_admin)
+        user = User(
+            username=username,
+            password=hashed_password,
+            is_admin=is_admin,
+            force_password_change=force_pw_change,
+        )
         db.session.add(user)
         db.session.commit()
-        audit_log('USER_CREATED', f'target_user={username} is_admin={is_admin}')
+        audit_log(
+            'USER_CREATED',
+            f'target_user={username} is_admin={is_admin} '
+            f'force_password_change={force_pw_change}',
+        )
         flash(f'Account created for {username}!', 'success')
         return redirect(url_for('list_users'))
     return render_template('add_user.html')
@@ -640,8 +679,17 @@ def edit_user(id):
             flash('Cannot remove admin from the last admin account.', 'danger')
             return render_template('edit_user.html', user=user)
         user.is_admin = new_is_admin
+        new_force_pw = 'force_password_change' in request.form
+        if new_force_pw and user.id == current_user.id and not user.force_password_change:
+            flash('You will be required to change your password on your next request.', 'warning')
+        user.force_password_change = new_force_pw
         db.session.commit()
-        audit_log('USER_EDITED', f'target_user={user.username} is_admin={user.is_admin} password_changed={password_changed}')
+        audit_log(
+            'USER_EDITED',
+            f'target_user={user.username} is_admin={user.is_admin} '
+            f'password_changed={password_changed} '
+            f'force_password_change={user.force_password_change}',
+        )
         flash(f'Account updated for {user.username}!', 'success')
         return redirect(url_for('list_users'))
     return render_template('edit_user.html', user=user)
