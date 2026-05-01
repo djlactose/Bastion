@@ -32,6 +32,16 @@ fi
 cp /root/bin/servers.sh /etc/bastion/
 cp /root/bin/servers.conf-sample /etc/bastion/
 cp /root/bin/servers.json-sample /etc/bastion/
+
+# Allow the web app (www-data) to update the live config files.
+# /etc/bastion is a volume; we deliberately scope this to just the two files
+# the /update endpoint writes, plus the directory itself so the app can create
+# them on a fresh volume. servers.sh, the *-sample files, and any
+# operator-mounted certs/ subdir keep their original (root) ownership.
+chown www-data:www-data /etc/bastion
+[ -f /etc/bastion/servers.conf ] && chown www-data:www-data /etc/bastion/servers.conf
+[ -f /etc/bastion/servers.json ] && chown www-data:www-data /etc/bastion/servers.json
+
 export PATH="/opt/venv/bin:$PATH"
 
 # Migrate web app data from old volume to new volume (one-time)
