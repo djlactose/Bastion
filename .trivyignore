@@ -1,0 +1,13 @@
+# Trivy suppression list for the Bastion image scan (see the workflows in
+# .github/workflows/). The PR gate (security-scan.yml) already runs with
+# `--ignore-unfixed`, so unfixable OS CVEs never block a build; add an entry
+# here only for a *fixable* finding you have consciously accepted or that is a
+# confirmed false positive. Prefer bumping the dependency over suppressing it.
+#
+# Format: one CVE / GHSA ID per line, optionally with a trailing comment.
+#   CVE-2024-XXXXX  # reason + who accepted + date
+#
+# NOTE: The `default-non-root-user` deviation (the image runs sshd as root by
+# design) is a Docker Scout *policy* finding, not a Trivy CVE, so it is NOT
+# suppressed here. It is documented in README.md ("Running as a non-root user")
+# with the capability-drop compensating control.

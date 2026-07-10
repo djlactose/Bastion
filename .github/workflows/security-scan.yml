@@ -1,0 +1,66 @@
+name: Security scan (Trivy)
+
+# Builds the image locally (no push) and scans it with Trivy. On pull requests
+# this is a GATE: a dependency bump that still leaves a *fixable* HIGH/CRITICAL
+# CVE fails the check, mirroring the manual `docker scout cves --only-fixed`
+# loop. Also runs weekly and on demand for independent visibility. Findings are
+# uploaded to the repo Security tab as SARIF.
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Weekly, Monday 07:00 UTC.
+    - cron: "0 7 * * 1"
+
+permissions: {}
+
+jobs:
+  scan:
+    name: Build and scan image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Build image (load, no push)
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          push: false
+          load: true
+          no-cache: true
+          tags: bastion:scan
+
+      - name: Scan image with Trivy (gate on fixable HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: bastion:scan
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: sarif
+          output: trivy-results.sarif
+          trivyignores: .trivyignore
+
+      - name: Upload Trivy results to Security tab
+        # Runs even when the scan gate fails, so findings are always visible.
+        if: ${{ always() }}
+        uses: github/codeql-action/upload-sarif@f58f0d11ebf5dedd870fab2f999275f7602cfa46 # v2.26.0
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-image

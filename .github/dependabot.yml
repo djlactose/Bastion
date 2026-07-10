@@ -1,0 +1,45 @@
+# Dependabot: automatically open PRs bumping pinned dependencies when
+# upstream ships fixes (security advisories open PRs immediately; the weekly
+# schedule below drives routine version updates).
+#
+# Deliberately NO `docker` ecosystem: the base image is intentionally pinned
+# to ubuntu:24.04 LTS (see the warning at the top of the Dockerfile) and OS
+# package CVEs are patched by the `--no-cache` rebuild's `apt-get upgrade`,
+# not by bumping the base tag. Letting Dependabot propose a non-LTS base bump
+# would fight that decision.
+version: 2
+updates:
+  # Python web-app dependencies pinned in web/requirements.txt.
+  - package-ecosystem: "pip"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "Bump"
+    groups:
+      # Fold routine patch/minor bumps into one PR to cut review noise.
+      python-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # Majors (e.g. cryptography 46 -> 49) stay as separate PRs for careful review.
+
+  # Keep the SHA-pinned GitHub Actions in the workflows current.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "Bump"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

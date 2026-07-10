@@ -4,6 +4,11 @@ on:
   push:
     branches: [master, develop]
   workflow_dispatch:
+  schedule:
+    # Weekly rebuild (Monday 06:00 UTC) so OS-package CVEs are picked up via the
+    # --no-cache `apt-get upgrade` even when no commit lands. Scheduled runs use
+    # the default branch (master), refreshing :latest and :ubuntu.
+    - cron: "0 6 * * 1"
 
 permissions: {}
 
@@ -15,6 +20,7 @@ jobs:
       contents: read
       id-token: write
       attestations: write
+      security-events: write
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
@@ -55,6 +61,7 @@ jobs:
             type=sha,format=long
 
       - name: Build and push image
+        id: build
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
@@ -64,3 +71,27 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           sbom: true
           provenance: mode=max
+
+      # Report-only scan of the just-published image. NON-gating on purpose: a
+      # scheduled/master rebuild's job is to reduce CVEs, so it must publish the
+      # improved image even if some fixable CVE remains. The hard gate lives in
+      # the PR workflow (security-scan.yml), before merge. Findings land in the
+      # Security tab.
+      - name: Scan published image with Trivy (report only)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: djlactose/bastion@${{ steps.build.outputs.digest }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+          format: sarif
+          output: trivy-results.sarif
+          trivyignores: .trivyignore
+
+      - name: Upload Trivy results to Security tab
+        if: ${{ always() }}
+        uses: github/codeql-action/upload-sarif@f58f0d11ebf5dedd870fab2f999275f7602cfa46 # v2.26.0
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-published

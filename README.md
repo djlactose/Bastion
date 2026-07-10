@@ -113,6 +113,16 @@ When certificates are present, Nginx serves HTTPS on port 443 and the web interf
 - Python dependencies are pinned in `web/requirements.txt` for reproducible builds.
 - Docker image builds include SBOM and provenance attestations for supply chain verification.
 
+### Dependency patching (automated)
+
+Keeping the image free of fixable CVEs is automated end to end:
+
+1. **Detect + bump.** [Dependabot](.github/dependabot.yml) opens a PR whenever an upstream fix ships — immediately for security advisories, weekly for routine version updates. Python-package fixes bump a pin in `web/requirements.txt`; the GitHub Actions used in CI are kept current the same way. (The base image is intentionally *not* watched — it stays on Ubuntu 24.04 LTS, and OS CVEs are handled by step 3.)
+2. **Verify (PR gate).** [`security-scan.yml`](.github/workflows/security-scan.yml) builds the image and runs **Trivy** on each PR, failing the check on any *fixable* HIGH/CRITICAL CVE (`--ignore-unfixed`, mirroring the manual `docker scout cves --only-fixed` loop). Review the green PR and merge.
+3. **Rebuild + publish.** Merging to `master` triggers [`docker-publish.yml`](.github/workflows/docker-publish.yml) (rebuild `--no-cache`, push `:latest`/`:ubuntu`). That workflow also runs **weekly on a schedule**, so OS-package CVEs from the Ubuntu `-security` pocket are picked up by `apt-get upgrade` with no commit required. Both PR and publish scans upload findings to the repo **Security** tab.
+
+Accepted/false-positive suppressions live in [`.trivyignore`](.trivyignore). For a manual local spot-check you can still run `docker scout cves --only-fixed` (or `trivy image --ignore-unfixed --severity HIGH,CRITICAL <image>`) against a freshly built image.
+
 ### Key rotation
 
 **Flask `SECRET_KEY` (automatic).** On every container start, `web/migrate.py` inspects `/var/lib/bastion/secret_key`. If the stored key is smaller than 32 bytes (older containers generated 24-byte keys), it is rotated in place: the previous key is moved to `secret_key.old` and a fresh 32-byte key is written. The old key is kept as a Flask `SECRET_KEY_FALLBACKS` entry so existing admin sessions and CSRF tokens remain valid through the rotation, then removed automatically on the next container start after a one-hour grace window. No operator action or session re-login required.
