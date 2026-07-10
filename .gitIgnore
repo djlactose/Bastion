@@ -2,6 +2,7 @@ servers.conf
 .devcontainer/
 .github/*
 !.github/workflows/
+!.github/dependabot.yml
 __pycache__/
 web/instance/
 .claude/
