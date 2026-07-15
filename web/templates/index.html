@@ -33,6 +33,31 @@
                 <input type="text" class="form-control" name="name" id="name" value="{{ name }}" placeholder="Display name for this bastion" required>
             </div>
 
+            <div class="mb-3">
+                <label class="form-label">Menu Theme <small class="text-muted">— colors for the servers.sh menus (users can override locally in their .servers.cust file)</small></label>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for t in themes %}
+                    <label class="theme-card">
+                        <input type="radio" name="theme" value="{{ t }}" {% if theme == t %}checked{% endif %}>
+                        <span class="theme-frame">
+                            <span class="theme-preview tp-{{ t }}">
+                                <span class="tp-screen">
+                                    <span class="tp-dialog">
+                                        <span class="tp-title">Server List</span>
+                                        <span class="tp-item">1 Windows</span>
+                                        <span class="tp-item tp-sel">2 Linux</span>
+                                        <span class="tp-item">3 Other</span>
+                                        <span class="tp-btns"><span class="tp-btn tp-btn-act">&lt;Ok&gt;</span><span class="tp-btn">&lt;Cancel&gt;</span></span>
+                                    </span>
+                                </span>
+                            </span>
+                            <span class="theme-name">{{ t|capitalize }}{% if t == 'default' %} (tool standard){% endif %}</span>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
             {% macro machine_section(label, id_prefix, machines, connection_types, known_codes) %}
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#{{ id_prefix }}Collapse" aria-expanded="{{ 'true' if not machines else 'false' }}">
@@ -332,6 +357,10 @@
         preview += '############################################\n';
         preview += 'name="' + name + '"\n';
         preview += '############################################\n';
+        var themeRadio = form.querySelector('input[name="theme"]:checked');
+        preview += '#Menu color theme (default, dark, blue, green, red)\n';
+        preview += 'theme="' + (themeRadio ? themeRadio.value : 'default') + '"\n';
+        preview += '############################################\n';
         preview += '#Windows Machines List\n';
         preview += 'windowsMachines=(' + getMachines('windows') + ')\n';
         preview += '#Linux Machines List\n';
@@ -388,6 +417,111 @@
     .card-header[aria-expanded="false"] .bi-chevron-down,
     .card-header.collapsed .bi-chevron-down {
         transform: rotate(-90deg);
+    }
+
+    /* Menu theme picker: each card is a CSS mock of a whiptail/dialog menu.
+       Color values mirror the theme tables in servers.sh (applyTheme). */
+    .theme-card {
+        cursor: pointer;
+        margin: 0;
+    }
+    .theme-card input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .theme-frame {
+        display: block;
+        border: 2px solid var(--bs-border-color, #dee2e6);
+        border-radius: 6px;
+        padding: 4px;
+    }
+    .theme-card input:checked + .theme-frame {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+    }
+    .theme-name {
+        display: block;
+        text-align: center;
+        font-size: 0.8rem;
+        margin-top: 3px;
+    }
+    .theme-preview {
+        display: block;
+        width: 168px;
+        font-family: SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 10px;
+        line-height: 1.5;
+        border-radius: 4px;
+        overflow: hidden;
+        user-select: none;
+    }
+    .tp-screen {
+        display: block;
+        padding: 10px 12px;
+        background: var(--tp-screen);
+    }
+    .tp-dialog {
+        display: block;
+        background: var(--tp-dialog);
+        color: var(--tp-text);
+        border: 1px solid var(--tp-border);
+        padding: 3px 6px 5px;
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.45);
+    }
+    .tp-title {
+        display: block;
+        color: var(--tp-title);
+        text-align: center;
+        font-weight: bold;
+    }
+    .tp-item {
+        display: block;
+        padding: 0 4px;
+    }
+    .tp-sel {
+        background: var(--tp-sel-bg);
+        color: var(--tp-sel-text);
+    }
+    .tp-btns {
+        display: block;
+        text-align: center;
+        margin-top: 3px;
+    }
+    .tp-btn {
+        background: var(--tp-btn-bg);
+        color: var(--tp-btn-text);
+        padding: 0 2px;
+        margin: 0 4px;
+    }
+    .tp-btn-act {
+        background: var(--tp-btn-act-bg);
+        color: var(--tp-btn-act-text);
+    }
+    .tp-default {
+        --tp-screen: #0000aa; --tp-dialog: #aaaaaa; --tp-text: #000000; --tp-border: #000000;
+        --tp-title: #aa0000; --tp-sel-bg: #aa0000; --tp-sel-text: #ffffff;
+        --tp-btn-bg: #aaaaaa; --tp-btn-text: #000000; --tp-btn-act-bg: #aa0000; --tp-btn-act-text: #ffffff;
+    }
+    .tp-dark {
+        --tp-screen: #000000; --tp-dialog: #000000; --tp-text: #aaaaaa; --tp-border: #ffffff;
+        --tp-title: #ffff55; --tp-sel-bg: #ffff55; --tp-sel-text: #000000;
+        --tp-btn-bg: #aaaaaa; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
+    }
+    .tp-blue {
+        --tp-screen: #0000aa; --tp-dialog: #0000aa; --tp-text: #ffffff; --tp-border: #5555ff;
+        --tp-title: #ffff55; --tp-sel-bg: #00aaaa; --tp-sel-text: #000000;
+        --tp-btn-bg: #00aaaa; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
+    }
+    .tp-green {
+        --tp-screen: #000000; --tp-dialog: #000000; --tp-text: #00aa00; --tp-border: #55ff55;
+        --tp-title: #55ff55; --tp-sel-bg: #00aa00; --tp-sel-text: #000000;
+        --tp-btn-bg: #00aa00; --tp-btn-text: #000000; --tp-btn-act-bg: #55ff55; --tp-btn-act-text: #000000;
+    }
+    .tp-red {
+        --tp-screen: #aa0000; --tp-dialog: #aa0000; --tp-text: #ffffff; --tp-border: #ff5555;
+        --tp-title: #ffff55; --tp-sel-bg: #ffff55; --tp-sel-text: #000000;
+        --tp-btn-bg: #aaaaaa; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
     }
 </style>
 {% endblock %}

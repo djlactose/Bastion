@@ -184,11 +184,16 @@ CONNECTION_TYPES = [
 ]
 KNOWN_CODES = [ct[0] for ct in CONNECTION_TYPES]
 
+# Menu color themes for servers.sh dialog screens. The value is written into
+# the bash-sourced servers.conf, so only whitelisted names are ever accepted.
+THEMES = ['default', 'dark', 'blue', 'green', 'red']
+
 def parse_config(file_path):
     config = {
         'bastion': [],
         'base_port': 22,
         'name': '',
+        'theme': 'default',
         'windowsMachines': [],
         'linuxMachines': [],
         'otherMachines': []
@@ -202,6 +207,8 @@ def parse_config(file_path):
             config['bastion'] = data.get('bastion', [])
             config['base_port'] = data.get('base_port', 22)
             config['name'] = data.get('name', '')
+            theme = data.get('theme', 'default')
+            config['theme'] = theme if theme in THEMES else 'default'
             for category in ('windowsMachines', 'linuxMachines', 'otherMachines'):
                 machines = data.get(category, [])
                 config[category] = [
@@ -226,6 +233,9 @@ def parse_config(file_path):
                     config['base_port'] = line.split('=', 1)[1]
                 elif line.startswith('name='):
                     config['name'] = line.split('=', 1)[1].strip('"')
+                elif line.startswith('theme='):
+                    theme = line.split('=', 1)[1].strip('"')
+                    config['theme'] = theme if theme in THEMES else 'default'
                 elif line.startswith('windowsMachines='):
                     content = line.split('=', 1)[1].strip('()')
                     items = content.split('" "')
@@ -241,7 +251,7 @@ def parse_config(file_path):
 
     return config
 
-def write_json_config(bastion, base_port, name, windows_machines, linux_machines, other_machines):
+def write_json_config(bastion, base_port, name, theme, windows_machines, linux_machines, other_machines):
     """Write JSON config file alongside the legacy .conf."""
     def parse_machine_entries(machine_strs):
         machines = []
@@ -264,6 +274,7 @@ def write_json_config(bastion, base_port, name, windows_machines, linux_machines
         'bastion': bastion,
         'base_port': int(base_port),
         'name': name,
+        'theme': theme,
         'windowsMachines': parse_machine_entries(windows_machines),
         'linuxMachines': parse_machine_entries(linux_machines),
         'otherMachines': parse_machine_entries(other_machines)
@@ -280,6 +291,7 @@ def migrate_conf_to_json():
             'bastion': config['bastion'],
             'base_port': int(config['base_port']) if isinstance(config['base_port'], str) else config['base_port'],
             'name': config['name'],
+            'theme': config.get('theme', 'default'),
         }
         for category in ('windowsMachines', 'linuxMachines', 'otherMachines'):
             config_data[category] = []
@@ -311,7 +323,7 @@ def index():
         return redirect(url_for('setup'))
 
     config = parse_config(config_file)
-    return render_template('index.html', connection_types=CONNECTION_TYPES, known_codes=KNOWN_CODES, **config)
+    return render_template('index.html', connection_types=CONNECTION_TYPES, known_codes=KNOWN_CODES, themes=THEMES, **config)
 
 @app.route('/update', methods=['POST'])
 @login_required
@@ -319,10 +331,16 @@ def update():
     bastion = [host for host in request.form.getlist('bastion') if host.strip()]
     base_port = request.form['base_port']
     name = request.form['name']
+    theme = request.form.get('theme', 'default')
 
     # Fix #4: Validate base_port is numeric
     if not validate_port(base_port):
         flash('Invalid port number.', 'danger')
+        return redirect(url_for('index'))
+
+    # Whitelist-only: this value is written into the bash-sourced servers.conf.
+    if theme not in THEMES:
+        flash('Invalid theme selection.', 'danger')
         return redirect(url_for('index'))
 
     # Fix #4: Validate bastion hosts
@@ -401,6 +419,10 @@ base_port={base_port}
 #Name for bastion host to be displayed in menu
 name="{name}"
 ############################################
+############################################
+#Menu color theme (default, dark, blue, green, red)
+theme="{theme}"
+############################################
 # Connection Table
 # D = Portainer Port - port 9000
 # H = Website Ports - ports 8080, 8443
@@ -431,9 +453,9 @@ name="{name}"
         file.write(config_content)
 
     # Also write JSON config for structured access
-    write_json_config(bastion, base_port, name, windows_machines, linux_machines, other_machines)
+    write_json_config(bastion, base_port, name, theme, windows_machines, linux_machines, other_machines)
 
-    audit_log('CONFIG_UPDATED', f'bastion_hosts={len(bastion)} windows={len(windows_machines)} linux={len(linux_machines)} other={len(other_machines)}')
+    audit_log('CONFIG_UPDATED', f'bastion_hosts={len(bastion)} windows={len(windows_machines)} linux={len(linux_machines)} other={len(other_machines)} theme={theme}')
     flash('Configuration updated successfully!', 'success')
     return redirect(url_for('index'))
 

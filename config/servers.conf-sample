@@ -12,6 +12,10 @@ base_port=22
 #Name for bastion host to be displayed in menu
 name=""
 ############################################
+############################################
+#Menu color theme (default, dark, blue, green, red)
+theme="default"
+############################################
 # Connection Table
 # B = Portainer Port - port 8000
 # D = Portainer Port - port 9000

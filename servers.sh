@@ -150,6 +150,10 @@ customFile(){
     remote_user=${remote_user:-`whoami`}
     # Save the input to the custom file.
     echo remote_user=$remote_user > $customFile
+    # Commented examples for overriding the server-pushed menu theme locally.
+    echo "#theme=dark            # menu colors: default, dark, blue, green, red (overrides server setting)" >> $customFile
+    echo "#custom_newt_colors='root=white,blue;window=black,lightgray'   # whiptail raw override" >> $customFile
+    echo "#custom_dialogrc=/path/to/dialogrc                             # dialog raw override" >> $customFile
   fi
 }
 
@@ -235,6 +239,90 @@ depCheck(){
     echo "$depMissing dependence(s) are missing. The following are missing: $dep"
     checkAppUpdate
     exit
+  fi
+}
+
+# applyTheme: Apply the menu color theme to whiptail (NEWT_COLORS) or dialog (DIALOGRC).
+# The theme name comes from servers.conf (set via the web UI); users can override it
+# locally in the .cust file with theme=, custom_newt_colors= or custom_dialogrc=.
+applyTheme(){
+  if [ "$menuCom" = "whiptail" ]; then
+    # A raw NEWT_COLORS override wins over any named theme.
+    if [ -n "$custom_newt_colors" ]; then
+      export NEWT_COLORS="$custom_newt_colors"
+      return
+    fi
+    case "$theme" in
+      dark)
+        export NEWT_COLORS='root=white,black;window=lightgray,black;border=white,black;shadow=black,black;title=yellow,black;textbox=lightgray,black;listbox=lightgray,black;actlistbox=black,lightgray;actsellistbox=black,yellow;button=black,lightgray;actbutton=black,yellow'
+        ;;
+      blue)
+        export NEWT_COLORS='root=white,blue;window=white,blue;border=brightblue,blue;shadow=black,black;title=yellow,blue;textbox=white,blue;listbox=white,blue;actlistbox=black,cyan;actsellistbox=black,cyan;button=black,cyan;actbutton=black,yellow'
+        ;;
+      green)
+        export NEWT_COLORS='root=green,black;window=green,black;border=brightgreen,black;shadow=black,black;title=brightgreen,black;textbox=green,black;listbox=green,black;actlistbox=black,green;actsellistbox=black,brightgreen;button=black,green;actbutton=black,brightgreen'
+        ;;
+      red)
+        export NEWT_COLORS='root=white,red;window=white,red;border=brightred,red;shadow=black,black;title=yellow,red;textbox=white,red;listbox=white,red;actlistbox=black,lightgray;actsellistbox=black,yellow;button=black,lightgray;actbutton=black,yellow'
+        ;;
+    esac
+  else
+    # A user-supplied dialogrc file wins over any named theme.
+    if [ -n "$custom_dialogrc" ]; then
+      export DIALOGRC="$custom_dialogrc"
+      return
+    fi
+    themeRc=./.$(basename "$0" .sh).dialogrc
+    case "$theme" in
+      dark)
+        dlgScreen="(WHITE,BLACK,OFF)";  dlgDialog="(WHITE,BLACK,OFF)"
+        dlgTitle="(YELLOW,BLACK,ON)";   dlgBorder="(WHITE,BLACK,ON)"
+        dlgBtnAct="(BLACK,YELLOW,ON)";  dlgBtnIna="(BLACK,WHITE,OFF)"
+        dlgItem="(WHITE,BLACK,OFF)";    dlgItemSel="(BLACK,YELLOW,ON)"
+        dlgTag="(YELLOW,BLACK,ON)";     dlgTagSel="(BLACK,YELLOW,ON)"
+        ;;
+      blue)
+        dlgScreen="(WHITE,BLUE,OFF)";   dlgDialog="(WHITE,BLUE,OFF)"
+        dlgTitle="(YELLOW,BLUE,ON)";    dlgBorder="(WHITE,BLUE,ON)"
+        dlgBtnAct="(BLACK,YELLOW,ON)";  dlgBtnIna="(BLACK,CYAN,OFF)"
+        dlgItem="(WHITE,BLUE,OFF)";     dlgItemSel="(BLACK,CYAN,ON)"
+        dlgTag="(YELLOW,BLUE,ON)";      dlgTagSel="(BLACK,CYAN,ON)"
+        ;;
+      green)
+        dlgScreen="(GREEN,BLACK,OFF)";  dlgDialog="(GREEN,BLACK,OFF)"
+        dlgTitle="(GREEN,BLACK,ON)";    dlgBorder="(GREEN,BLACK,ON)"
+        dlgBtnAct="(BLACK,GREEN,ON)";   dlgBtnIna="(GREEN,BLACK,OFF)"
+        dlgItem="(GREEN,BLACK,OFF)";    dlgItemSel="(BLACK,GREEN,ON)"
+        dlgTag="(GREEN,BLACK,ON)";      dlgTagSel="(BLACK,GREEN,ON)"
+        ;;
+      red)
+        dlgScreen="(WHITE,RED,OFF)";    dlgDialog="(WHITE,RED,OFF)"
+        dlgTitle="(YELLOW,RED,ON)";     dlgBorder="(WHITE,RED,ON)"
+        dlgBtnAct="(BLACK,YELLOW,ON)";  dlgBtnIna="(BLACK,WHITE,OFF)"
+        dlgItem="(WHITE,RED,OFF)";      dlgItemSel="(BLACK,YELLOW,ON)"
+        dlgTag="(YELLOW,RED,ON)";       dlgTagSel="(BLACK,YELLOW,ON)"
+        ;;
+      *)
+        # Default/unknown theme: use dialog's stock colors.
+        return
+        ;;
+    esac
+    # Regenerate the rc file each run so theme changes take effect immediately.
+    cat > $themeRc <<EOF
+use_colors = ON
+screen_color = $dlgScreen
+dialog_color = $dlgDialog
+title_color = $dlgTitle
+border_color = $dlgBorder
+button_active_color = $dlgBtnAct
+button_inactive_color = $dlgBtnIna
+menubox_color = $dlgDialog
+item_color = $dlgItem
+item_selected_color = $dlgItemSel
+tag_color = $dlgTag
+tag_selected_color = $dlgTagSel
+EOF
+    export DIALOGRC=$themeRc
   fi
 }
 
@@ -553,6 +641,8 @@ done
 ####################################################
 # Verify dependencies
 depCheck
+# Apply the menu color theme (needs $menuCom resolved by depCheck)
+applyTheme
 exitstatus=0
 while [ $exitstatus -eq 0 ]; do
   # Display OS selection menu

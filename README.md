@@ -74,6 +74,20 @@ The `servers.sh` script is a client-side tool for connecting through the bastion
 2. Run it and follow the prompts to configure your bastion host address and port
 3. A `servers.conf` configuration file will be downloaded from the bastion on first run
 
+#### Menu colors
+
+The `servers.sh` menus (drawn with `whiptail` or `dialog`) support color themes: `default`, `dark`, `blue`, `green`, and `red`. An administrator selects the theme on the web interface's configuration page — each option shows a live preview of the menu colors — and the choice reaches every client through the auto-updating `servers.conf`.
+
+Individual users can override the pushed theme in their local hidden `.servers.cust` file (created next to the script on first run):
+
+```bash
+theme=dark                                                    # pick a named theme
+custom_newt_colors='root=white,blue;window=black,lightgray'   # raw whiptail NEWT_COLORS override
+custom_dialogrc=/path/to/dialogrc                             # raw dialog theme file override
+```
+
+Raw overrides take precedence over a named theme, and any setting in `.servers.cust` takes precedence over the server-pushed value.
+
 ## Persistent Volumes
 
 For proper operation and data persistence, mount the following directories:
