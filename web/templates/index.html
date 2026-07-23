@@ -33,28 +33,61 @@
                 <input type="text" class="form-control" name="name" id="name" value="{{ name }}" placeholder="Display name for this bastion" required>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Menu Theme <small class="text-muted">— colors for the servers.sh menus (users can override locally in their .servers.cust file)</small></label>
-                <div class="d-flex flex-wrap gap-2">
-                    {% for t in themes %}
-                    <label class="theme-card">
-                        <input type="radio" name="theme" value="{{ t }}" {% if theme == t %}checked{% endif %}>
-                        <span class="theme-frame">
-                            <span class="theme-preview tp-{{ t }}">
-                                <span class="tp-screen">
-                                    <span class="tp-dialog">
-                                        <span class="tp-title">Server List</span>
-                                        <span class="tp-item">1 Windows</span>
-                                        <span class="tp-item tp-sel">2 Linux</span>
-                                        <span class="tp-item">3 Other</span>
-                                        <span class="tp-btns"><span class="tp-btn tp-btn-act">&lt;Ok&gt;</span><span class="tp-btn">&lt;Cancel&gt;</span></span>
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#themeCollapse" aria-expanded="false">
+                    <span>
+                        Menu Theme
+                        <span class="badge bg-secondary ms-2" id="themeBadge">{{ theme|capitalize }}</span>
+                    </span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div id="themeCollapse" class="collapse">
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Colors for the servers.sh menus (users can override locally in their .servers.cust file)</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for t in themes %}
+                            <label class="theme-card">
+                                <input type="radio" name="theme" value="{{ t }}" {% if theme == t %}checked{% endif %}>
+                                <span class="theme-frame">
+                                    <span class="theme-preview tp-{{ t }}"{% if t == 'custom' %} id="tpCustomPreview"{% endif %}>
+                                        <span class="tp-screen">
+                                            <span class="tp-dialog">
+                                                <span class="tp-title">Server List</span>
+                                                <span class="tp-item">1 Windows</span>
+                                                <span class="tp-item tp-sel">2 Linux</span>
+                                                <span class="tp-item">3 Other</span>
+                                                <span class="tp-btns"><span class="tp-btn tp-btn-act">&lt;Ok&gt;</span><span class="tp-btn">&lt;Cancel&gt;</span></span>
+                                            </span>
+                                        </span>
                                     </span>
+                                    <span class="theme-name">{{ t|capitalize }}{% if t == 'default' %} (tool standard){% endif %}</span>
                                 </span>
-                            </span>
-                            <span class="theme-name">{{ t|capitalize }}{% if t == 'default' %} (tool standard){% endif %}</span>
-                        </span>
-                    </label>
-                    {% endfor %}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <div id="customThemeColors" class="mt-3 {% if theme != 'custom' %}d-none{% endif %}">
+                            <p class="text-muted small mb-2">Custom theme colors</p>
+                            <div class="row g-2">
+                                {% for field, label, current in [
+                                    ('custom_screen', 'Screen background', custom_screen),
+                                    ('custom_bg', 'Dialog background', custom_bg),
+                                    ('custom_fg', 'Text', custom_fg),
+                                    ('custom_title', 'Title', custom_title),
+                                    ('custom_sel_bg', 'Highlight background', custom_sel_bg),
+                                    ('custom_sel_fg', 'Highlight text', custom_sel_fg)
+                                ] %}
+                                <div class="col-6 col-md-4 col-lg-2">
+                                    <label class="form-label small mb-1" for="{{ field }}">{{ label }}</label>
+                                    <select class="form-select form-select-sm custom-theme-color" name="{{ field }}" id="{{ field }}">
+                                        {% for c in theme_colors %}
+                                        <option value="{{ c }}" {% if c == current %}selected{% endif %}>{{ c|capitalize }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -358,8 +391,12 @@
         preview += 'name="' + name + '"\n';
         preview += '############################################\n';
         var themeRadio = form.querySelector('input[name="theme"]:checked');
-        preview += '#Menu color theme (default, dark, blue, green, red)\n';
+        preview += '#Menu color theme (default, dark, blue, green, red, purple, cyan, amber, custom)\n';
         preview += 'theme="' + (themeRadio ? themeRadio.value : 'default') + '"\n';
+        preview += '#Custom theme colors (used when theme="custom")\n';
+        ['custom_screen', 'custom_bg', 'custom_fg', 'custom_title', 'custom_sel_bg', 'custom_sel_fg'].forEach(function(field) {
+            preview += field + '="' + document.getElementById(field).value + '"\n';
+        });
         preview += '############################################\n';
         preview += '#Windows Machines List\n';
         preview += 'windowsMachines=(' + getMachines('windows') + ')\n';
@@ -384,6 +421,48 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...';
         return true;
     }
+
+    // Keep the collapsed Menu Theme header badge in sync with the selected theme,
+    // and show the color pickers only while the Custom theme is selected.
+    document.querySelectorAll('input[name="theme"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            var badge = document.getElementById('themeBadge');
+            if (badge) {
+                badge.textContent = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+            }
+            document.getElementById('customThemeColors').classList.toggle('d-none', this.value !== 'custom');
+        });
+    });
+
+    // Live preview for the Custom theme card. Hex values are the VGA palette
+    // used by the other tp-* preview classes.
+    var ANSI_HEX = {
+        black: '#000000', red: '#aa0000', green: '#00aa00', yellow: '#ffff55',
+        blue: '#0000aa', magenta: '#aa00aa', cyan: '#00aaaa', white: '#ffffff'
+    };
+    function updateCustomPreview() {
+        var preview = document.getElementById('tpCustomPreview');
+        if (!preview) return;
+        function val(id) { return ANSI_HEX[document.getElementById(id).value] || '#000000'; }
+        var screen = val('custom_screen'), bg = val('custom_bg'), fg = val('custom_fg'),
+            title = val('custom_title'), selBg = val('custom_sel_bg'), selFg = val('custom_sel_fg');
+        preview.style.setProperty('--tp-screen', screen);
+        preview.style.setProperty('--tp-dialog', bg);
+        preview.style.setProperty('--tp-text', fg);
+        preview.style.setProperty('--tp-border', fg);
+        preview.style.setProperty('--tp-title', title);
+        preview.style.setProperty('--tp-sel-bg', selBg);
+        preview.style.setProperty('--tp-sel-text', selFg);
+        // Inactive buttons render as the window colors inverted; active ones use the highlight colors.
+        preview.style.setProperty('--tp-btn-bg', fg);
+        preview.style.setProperty('--tp-btn-text', bg);
+        preview.style.setProperty('--tp-btn-act-bg', selBg);
+        preview.style.setProperty('--tp-btn-act-text', selFg);
+    }
+    document.querySelectorAll('.custom-theme-color').forEach(function(sel) {
+        sel.addEventListener('change', updateCustomPreview);
+    });
+    updateCustomPreview();
 </script>
 
 <style>
@@ -522,6 +601,27 @@
         --tp-screen: #aa0000; --tp-dialog: #aa0000; --tp-text: #ffffff; --tp-border: #ff5555;
         --tp-title: #ffff55; --tp-sel-bg: #ffff55; --tp-sel-text: #000000;
         --tp-btn-bg: #aaaaaa; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
+    }
+    .tp-purple {
+        --tp-screen: #aa00aa; --tp-dialog: #aa00aa; --tp-text: #ffffff; --tp-border: #ff55ff;
+        --tp-title: #ffff55; --tp-sel-bg: #ffff55; --tp-sel-text: #000000;
+        --tp-btn-bg: #aaaaaa; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
+    }
+    .tp-cyan {
+        --tp-screen: #00aaaa; --tp-dialog: #00aaaa; --tp-text: #000000; --tp-border: #ffffff;
+        --tp-title: #0000aa; --tp-sel-bg: #0000aa; --tp-sel-text: #ffffff;
+        --tp-btn-bg: #aaaaaa; --tp-btn-text: #000000; --tp-btn-act-bg: #0000aa; --tp-btn-act-text: #ffffff;
+    }
+    .tp-amber {
+        --tp-screen: #000000; --tp-dialog: #000000; --tp-text: #ffff55; --tp-border: #ffff55;
+        --tp-title: #ffff55; --tp-sel-bg: #ffff55; --tp-sel-text: #000000;
+        --tp-btn-bg: #aa5500; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
+    }
+    /* Starting values only — JS overrides these inline from the color selects. */
+    .tp-custom {
+        --tp-screen: #000000; --tp-dialog: #000000; --tp-text: #ffffff; --tp-border: #ffffff;
+        --tp-title: #ffff55; --tp-sel-bg: #ffff55; --tp-sel-text: #000000;
+        --tp-btn-bg: #ffffff; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
     }
 </style>
 {% endblock %}

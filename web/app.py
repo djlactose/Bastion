@@ -186,7 +186,23 @@ KNOWN_CODES = [ct[0] for ct in CONNECTION_TYPES]
 
 # Menu color themes for servers.sh dialog screens. The value is written into
 # the bash-sourced servers.conf, so only whitelisted names are ever accepted.
-THEMES = ['default', 'dark', 'blue', 'green', 'red']
+THEMES = ['default', 'dark', 'blue', 'green', 'red', 'purple', 'cyan', 'amber', 'custom']
+
+# Color names allowed for the 'custom' theme roles. These are the eight ANSI
+# colors that exist under the same name in both whiptail (NEWT_COLORS) and
+# dialog, and they are written into the bash-sourced servers.conf, so only
+# whitelisted names are ever accepted.
+THEME_COLORS = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white']
+
+# Custom-theme color roles and their defaults (a dark look).
+CUSTOM_COLOR_DEFAULTS = {
+    'custom_screen': 'black',
+    'custom_bg': 'black',
+    'custom_fg': 'white',
+    'custom_title': 'yellow',
+    'custom_sel_bg': 'yellow',
+    'custom_sel_fg': 'black',
+}
 
 def parse_config(file_path):
     config = {
@@ -198,6 +214,7 @@ def parse_config(file_path):
         'linuxMachines': [],
         'otherMachines': []
     }
+    config.update(CUSTOM_COLOR_DEFAULTS)
 
     # Try JSON first
     if os.path.exists(config_file_json):
@@ -209,6 +226,9 @@ def parse_config(file_path):
             config['name'] = data.get('name', '')
             theme = data.get('theme', 'default')
             config['theme'] = theme if theme in THEMES else 'default'
+            for field, default in CUSTOM_COLOR_DEFAULTS.items():
+                color = data.get(field, default)
+                config[field] = color if color in THEME_COLORS else default
             for category in ('windowsMachines', 'linuxMachines', 'otherMachines'):
                 machines = data.get(category, [])
                 config[category] = [
@@ -236,6 +256,10 @@ def parse_config(file_path):
                 elif line.startswith('theme='):
                     theme = line.split('=', 1)[1].strip('"')
                     config['theme'] = theme if theme in THEMES else 'default'
+                elif any(line.startswith(field + '=') for field in CUSTOM_COLOR_DEFAULTS):
+                    field, _, value = line.partition('=')
+                    color = value.strip('"')
+                    config[field] = color if color in THEME_COLORS else CUSTOM_COLOR_DEFAULTS[field]
                 elif line.startswith('windowsMachines='):
                     content = line.split('=', 1)[1].strip('()')
                     items = content.split('" "')
@@ -251,7 +275,7 @@ def parse_config(file_path):
 
     return config
 
-def write_json_config(bastion, base_port, name, theme, windows_machines, linux_machines, other_machines):
+def write_json_config(bastion, base_port, name, theme, custom_colors, windows_machines, linux_machines, other_machines):
     """Write JSON config file alongside the legacy .conf."""
     def parse_machine_entries(machine_strs):
         machines = []
@@ -275,6 +299,7 @@ def write_json_config(bastion, base_port, name, theme, windows_machines, linux_m
         'base_port': int(base_port),
         'name': name,
         'theme': theme,
+        **custom_colors,
         'windowsMachines': parse_machine_entries(windows_machines),
         'linuxMachines': parse_machine_entries(linux_machines),
         'otherMachines': parse_machine_entries(other_machines)
@@ -293,6 +318,8 @@ def migrate_conf_to_json():
             'name': config['name'],
             'theme': config.get('theme', 'default'),
         }
+        for field, default in CUSTOM_COLOR_DEFAULTS.items():
+            config_data[field] = config.get(field, default)
         for category in ('windowsMachines', 'linuxMachines', 'otherMachines'):
             config_data[category] = []
             for m in config[category]:
@@ -323,7 +350,7 @@ def index():
         return redirect(url_for('setup'))
 
     config = parse_config(config_file)
-    return render_template('index.html', connection_types=CONNECTION_TYPES, known_codes=KNOWN_CODES, themes=THEMES, **config)
+    return render_template('index.html', connection_types=CONNECTION_TYPES, known_codes=KNOWN_CODES, themes=THEMES, theme_colors=THEME_COLORS, **config)
 
 @app.route('/update', methods=['POST'])
 @login_required
@@ -342,6 +369,15 @@ def update():
     if theme not in THEMES:
         flash('Invalid theme selection.', 'danger')
         return redirect(url_for('index'))
+
+    # Custom theme colors — whitelist-only for the same reason.
+    custom_colors = {}
+    for field, default in CUSTOM_COLOR_DEFAULTS.items():
+        color = request.form.get(field, default)
+        if color not in THEME_COLORS:
+            flash('Invalid theme color selection.', 'danger')
+            return redirect(url_for('index'))
+        custom_colors[field] = color
 
     # Fix #4: Validate bastion hosts
     for host in bastion:
@@ -420,8 +456,15 @@ base_port={base_port}
 name="{name}"
 ############################################
 ############################################
-#Menu color theme (default, dark, blue, green, red)
+#Menu color theme (default, dark, blue, green, red, purple, cyan, amber, custom)
 theme="{theme}"
+#Custom theme colors (used when theme="custom"; black, red, green, yellow, blue, magenta, cyan, white)
+custom_screen="{custom_colors['custom_screen']}"
+custom_bg="{custom_colors['custom_bg']}"
+custom_fg="{custom_colors['custom_fg']}"
+custom_title="{custom_colors['custom_title']}"
+custom_sel_bg="{custom_colors['custom_sel_bg']}"
+custom_sel_fg="{custom_colors['custom_sel_fg']}"
 ############################################
 # Connection Table
 # D = Portainer Port - port 9000
@@ -453,7 +496,7 @@ theme="{theme}"
         file.write(config_content)
 
     # Also write JSON config for structured access
-    write_json_config(bastion, base_port, name, theme, windows_machines, linux_machines, other_machines)
+    write_json_config(bastion, base_port, name, theme, custom_colors, windows_machines, linux_machines, other_machines)
 
     audit_log('CONFIG_UPDATED', f'bastion_hosts={len(bastion)} windows={len(windows_machines)} linux={len(linux_machines)} other={len(other_machines)} theme={theme}')
     flash('Configuration updated successfully!', 'success')

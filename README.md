@@ -76,12 +76,15 @@ The `servers.sh` script is a client-side tool for connecting through the bastion
 
 #### Menu colors
 
-The `servers.sh` menus (drawn with `whiptail` or `dialog`) support color themes: `default`, `dark`, `blue`, `green`, and `red`. An administrator selects the theme on the web interface's configuration page — each option shows a live preview of the menu colors — and the choice reaches every client through the auto-updating `servers.conf`.
+The `servers.sh` menus (drawn with `whiptail` or `dialog`) support color themes: `default`, `dark`, `blue`, `green`, `red`, `purple`, `cyan`, `amber`, and `custom`. An administrator selects the theme on the web interface's configuration page — each option shows a live preview of the menu colors — and the choice reaches every client through the auto-updating `servers.conf`.
+
+The `custom` theme is fully configurable: picking it on the configuration page reveals six color roles (screen background, dialog background, text, title, highlight background, highlight text), each set to one of the eight ANSI colors (`black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`), with the preview card updating live as colors are chosen.
 
 Individual users can override the pushed theme in their local hidden `.servers.cust` file (created next to the script on first run):
 
 ```bash
 theme=dark                                                    # pick a named theme
+theme=custom custom_bg=blue custom_fg=white                   # or build your own from the custom_* colors
 custom_newt_colors='root=white,blue;window=black,lightgray'   # raw whiptail NEWT_COLORS override
 custom_dialogrc=/path/to/dialogrc                             # raw dialog theme file override
 ```

@@ -3,6 +3,12 @@
     "base_port": 22,
     "name": "",
     "theme": "default",
+    "custom_screen": "black",
+    "custom_bg": "black",
+    "custom_fg": "white",
+    "custom_title": "yellow",
+    "custom_sel_bg": "yellow",
+    "custom_sel_fg": "black",
     "windowsMachines": [],
     "linuxMachines": [
         {"ip": "127.0.0.1", "connection": "M", "name": "Bastion Host"}

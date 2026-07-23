@@ -151,7 +151,8 @@ customFile(){
     # Save the input to the custom file.
     echo remote_user=$remote_user > $customFile
     # Commented examples for overriding the server-pushed menu theme locally.
-    echo "#theme=dark            # menu colors: default, dark, blue, green, red (overrides server setting)" >> $customFile
+    echo "#theme=dark            # menu colors: default, dark, blue, green, red, purple, cyan, amber, custom (overrides server setting)" >> $customFile
+    echo "#custom_bg=black custom_fg=white custom_title=yellow custom_sel_bg=yellow custom_sel_fg=black custom_screen=black   # colors for theme=custom (black, red, green, yellow, blue, magenta, cyan, white)" >> $customFile
     echo "#custom_newt_colors='root=white,blue;window=black,lightgray'   # whiptail raw override" >> $customFile
     echo "#custom_dialogrc=/path/to/dialogrc                             # dialog raw override" >> $customFile
   fi
@@ -265,6 +266,26 @@ applyTheme(){
       red)
         export NEWT_COLORS='root=white,red;window=white,red;border=brightred,red;shadow=black,black;title=yellow,red;textbox=white,red;listbox=white,red;actlistbox=black,lightgray;actsellistbox=black,yellow;button=black,lightgray;actbutton=black,yellow'
         ;;
+      purple)
+        export NEWT_COLORS='root=white,magenta;window=white,magenta;border=brightmagenta,magenta;shadow=black,black;title=yellow,magenta;textbox=white,magenta;listbox=white,magenta;actlistbox=black,yellow;actsellistbox=black,yellow;button=black,lightgray;actbutton=black,yellow'
+        ;;
+      cyan)
+        export NEWT_COLORS='root=black,cyan;window=black,cyan;border=white,cyan;shadow=black,black;title=blue,cyan;textbox=black,cyan;listbox=black,cyan;actlistbox=white,blue;actsellistbox=white,blue;button=black,lightgray;actbutton=white,blue'
+        ;;
+      amber)
+        export NEWT_COLORS='root=yellow,black;window=yellow,black;border=yellow,black;shadow=black,black;title=yellow,black;textbox=yellow,black;listbox=yellow,black;actlistbox=black,yellow;actsellistbox=black,yellow;button=black,brown;actbutton=black,yellow'
+        ;;
+      custom)
+        # Colors come from custom_* variables in servers.conf (set via the web UI)
+        # or the local .cust file. Fall back to a dark look for anything unset.
+        custom_screen=${custom_screen:-black}
+        custom_bg=${custom_bg:-black}
+        custom_fg=${custom_fg:-white}
+        custom_title=${custom_title:-yellow}
+        custom_sel_bg=${custom_sel_bg:-yellow}
+        custom_sel_fg=${custom_sel_fg:-black}
+        export NEWT_COLORS="root=$custom_fg,$custom_screen;window=$custom_fg,$custom_bg;border=$custom_fg,$custom_bg;shadow=black,black;title=$custom_title,$custom_bg;textbox=$custom_fg,$custom_bg;listbox=$custom_fg,$custom_bg;actlistbox=$custom_sel_fg,$custom_sel_bg;actsellistbox=$custom_sel_fg,$custom_sel_bg;button=$custom_bg,$custom_fg;actbutton=$custom_sel_fg,$custom_sel_bg"
+        ;;
     esac
   else
     # A user-supplied dialogrc file wins over any named theme.
@@ -301,6 +322,42 @@ applyTheme(){
         dlgBtnAct="(BLACK,YELLOW,ON)";  dlgBtnIna="(BLACK,WHITE,OFF)"
         dlgItem="(WHITE,RED,OFF)";      dlgItemSel="(BLACK,YELLOW,ON)"
         dlgTag="(YELLOW,RED,ON)";       dlgTagSel="(BLACK,YELLOW,ON)"
+        ;;
+      purple)
+        dlgScreen="(WHITE,MAGENTA,OFF)"; dlgDialog="(WHITE,MAGENTA,OFF)"
+        dlgTitle="(YELLOW,MAGENTA,ON)";  dlgBorder="(WHITE,MAGENTA,ON)"
+        dlgBtnAct="(BLACK,YELLOW,ON)";   dlgBtnIna="(BLACK,WHITE,OFF)"
+        dlgItem="(WHITE,MAGENTA,OFF)";   dlgItemSel="(BLACK,YELLOW,ON)"
+        dlgTag="(YELLOW,MAGENTA,ON)";    dlgTagSel="(BLACK,YELLOW,ON)"
+        ;;
+      cyan)
+        dlgScreen="(BLACK,CYAN,OFF)";   dlgDialog="(BLACK,CYAN,OFF)"
+        dlgTitle="(BLUE,CYAN,ON)";      dlgBorder="(WHITE,CYAN,ON)"
+        dlgBtnAct="(WHITE,BLUE,ON)";    dlgBtnIna="(BLACK,WHITE,OFF)"
+        dlgItem="(BLACK,CYAN,OFF)";     dlgItemSel="(WHITE,BLUE,ON)"
+        dlgTag="(BLUE,CYAN,ON)";        dlgTagSel="(WHITE,BLUE,ON)"
+        ;;
+      amber)
+        dlgScreen="(YELLOW,BLACK,OFF)"; dlgDialog="(YELLOW,BLACK,OFF)"
+        dlgTitle="(YELLOW,BLACK,ON)";   dlgBorder="(YELLOW,BLACK,ON)"
+        dlgBtnAct="(BLACK,YELLOW,ON)";  dlgBtnIna="(YELLOW,BLACK,OFF)"
+        dlgItem="(YELLOW,BLACK,OFF)";   dlgItemSel="(BLACK,YELLOW,ON)"
+        dlgTag="(YELLOW,BLACK,ON)";     dlgTagSel="(BLACK,YELLOW,ON)"
+        ;;
+      custom)
+        # Colors come from custom_* variables in servers.conf (set via the web UI)
+        # or the local .cust file. Fall back to a dark look for anything unset.
+        cScreen=$(echo "${custom_screen:-black}" | tr 'a-z' 'A-Z')
+        cBg=$(echo "${custom_bg:-black}" | tr 'a-z' 'A-Z')
+        cFg=$(echo "${custom_fg:-white}" | tr 'a-z' 'A-Z')
+        cTitle=$(echo "${custom_title:-yellow}" | tr 'a-z' 'A-Z')
+        cSelBg=$(echo "${custom_sel_bg:-yellow}" | tr 'a-z' 'A-Z')
+        cSelFg=$(echo "${custom_sel_fg:-black}" | tr 'a-z' 'A-Z')
+        dlgScreen="($cFg,$cScreen,OFF)";  dlgDialog="($cFg,$cBg,OFF)"
+        dlgTitle="($cTitle,$cBg,ON)";     dlgBorder="($cFg,$cBg,ON)"
+        dlgBtnAct="($cSelFg,$cSelBg,ON)"; dlgBtnIna="($cBg,$cFg,OFF)"
+        dlgItem="($cFg,$cBg,OFF)";        dlgItemSel="($cSelFg,$cSelBg,ON)"
+        dlgTag="($cTitle,$cBg,ON)";       dlgTagSel="($cSelFg,$cSelBg,ON)"
         ;;
       *)
         # Default/unknown theme: use dialog's stock colors.
