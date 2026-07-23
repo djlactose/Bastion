@@ -80,7 +80,7 @@
                                     <label class="form-label small mb-1" for="{{ field }}">{{ label }}</label>
                                     <select class="form-select form-select-sm custom-theme-color" name="{{ field }}" id="{{ field }}">
                                         {% for c in theme_colors %}
-                                        <option value="{{ c }}" {% if c == current %}selected{% endif %}>{{ c|capitalize }}</option>
+                                        <option value="{{ c }}" class="opt-{{ c }}" {% if c == current %}selected{% endif %}>{{ c|capitalize }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -459,8 +459,19 @@
         preview.style.setProperty('--tp-btn-act-bg', selBg);
         preview.style.setProperty('--tp-btn-act-text', selFg);
     }
+    // Tint a color select to match its current value so the chosen color is
+    // visible without opening the dropdown.
+    var LIGHT_COLORS = ['green', 'yellow', 'cyan', 'white'];
+    function tintColorSelect(sel) {
+        sel.style.backgroundColor = ANSI_HEX[sel.value] || '';
+        sel.style.color = LIGHT_COLORS.indexOf(sel.value) !== -1 ? '#000000' : '#ffffff';
+    }
     document.querySelectorAll('.custom-theme-color').forEach(function(sel) {
-        sel.addEventListener('change', updateCustomPreview);
+        tintColorSelect(sel);
+        sel.addEventListener('change', function() {
+            tintColorSelect(this);
+            updateCustomPreview();
+        });
     });
     updateCustomPreview();
 </script>
@@ -617,6 +628,18 @@
         --tp-title: #ffff55; --tp-sel-bg: #ffff55; --tp-sel-text: #000000;
         --tp-btn-bg: #aa5500; --tp-btn-text: #000000; --tp-btn-act-bg: #ffff55; --tp-btn-act-text: #000000;
     }
+    /* Custom-theme color dropdowns: swatch each option in its ANSI color
+       (the select itself is tinted to match its value by JS). Option styling
+       is honored by desktop Chrome/Firefox; other browsers fall back to text. */
+    .opt-black   { background: #000000; color: #ffffff; }
+    .opt-red     { background: #aa0000; color: #ffffff; }
+    .opt-green   { background: #00aa00; color: #000000; }
+    .opt-yellow  { background: #ffff55; color: #000000; }
+    .opt-blue    { background: #0000aa; color: #ffffff; }
+    .opt-magenta { background: #aa00aa; color: #ffffff; }
+    .opt-cyan    { background: #00aaaa; color: #000000; }
+    .opt-white   { background: #ffffff; color: #000000; }
+
     /* Starting values only — JS overrides these inline from the color selects. */
     .tp-custom {
         --tp-screen: #000000; --tp-dialog: #000000; --tp-text: #ffffff; --tp-border: #ffffff;
