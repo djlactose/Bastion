@@ -7,7 +7,7 @@
 - Handles multiple remote access protocols
 - Minimal setup for quick deployment
 - Docker support for containerized operation
-- Optional web interface for session access
+- Web admin interface for managing the client server list, menu theme, web admins, and SSH users (including Google Authenticator 2FA enrollment)
 - Persistent volume storage to preserve accounts and settings
 
 ## Getting Started
@@ -74,6 +74,10 @@ The `servers.sh` script is a client-side tool for connecting through the bastion
 2. Run it and follow the prompts to configure your bastion host address and port
 3. A `servers.conf` configuration file will be downloaded from the bastion on first run
 
+#### Connection types
+
+Each server in the list has a connection type: one of the built-in codes (`W` RDP, `L` SSH, `B` web admin, etc., listed in the web interface's dropdown) or **Other**, which forwards a single port. An **Other** value must be a port number (1–65535). Free-text values are rejected because `servers.sh` passes them straight to `ssh`. Hostnames may contain only letters, digits, `.`, `-`, and `_`, and may not start with `-`.
+
 #### Menu colors
 
 The `servers.sh` menus (drawn with `whiptail` or `dialog`) support color themes: `default`, `dark`, `blue`, `green`, `red`, `purple`, `cyan`, `amber`, and `custom`. An administrator selects the theme on the web interface's configuration page — each option shows a live preview of the menu colors — and the choice reaches every client through the auto-updating `servers.conf`.
@@ -110,7 +114,11 @@ For proper operation and data persistence, mount the following directories:
 | 22   | SSH entry point to the bastion                       |
 | 80   | HTTP (Nginx, only active with TLS certificates)      |
 | 443  | HTTPS (Nginx, only active with TLS certificates)     |
-| 8000 | Web interface for session access (direct, no TLS)    |
+| 8000 | Web admin interface (direct, no TLS)                 |
+
+### First-run setup
+
+On a fresh container with no web accounts, the web interface redirects to `/setup`, and **whoever reaches it first becomes the administrator**. Complete setup immediately after starting a new container, before the port is reachable from untrusted networks (or publish port 8000 only on `127.0.0.1` and use an SSH tunnel until setup is done).
 
 ## TLS/HTTPS (Optional)
 
@@ -119,15 +127,19 @@ To enable HTTPS via Nginx, place your TLS certificates in the `/etc/bastion/cert
 - `fullchain.pem`
 - `privkey.pem`
 
-When certificates are present, Nginx serves HTTPS on port 443 and the web interface binds to `127.0.0.1:8000` internally. Without certificates, the web interface is accessible directly on port 8000.
+When certificates are present, Nginx serves HTTPS on port 443 and the web interface binds to `127.0.0.1:8000` internally. Without certificates, the web interface is accessible directly on port 8000 over plain HTTP, **so admin passwords cross the network unencrypted**. Use TLS for anything beyond a trusted network or an SSH tunnel.
 
 ## Security
 
 - The web interface (Gunicorn/Flask) runs as `www-data`, not root. Web app data is isolated in `/var/lib/bastion/` with restricted ownership.
 - SSHD and Nginx run as root (required for privileged ports, PAM authentication, and user management).
-- Session cookies are marked `Secure` when TLS certificates are present.
+- The `sudoers` allowlist lets `www-data` run only `adduser.sh`, `deluser.sh`, and `resetpw.sh`. Those scripts validate the username and refuse to touch root or any system account (UID < 1000), so a compromised web process cannot use them to take over root.
+- Only administrators can sign in to the web interface, and an admin who is demoted loses their active session on their next request.
+- Logins are rate-limited (5 per minute per client IP). `X-Forwarded-For` is trusted only when Nginx is in front of the app, so the limit can't be bypassed by spoofing that header on the direct port-8000 listener.
+- Session cookies are marked `Secure` when TLS certificates are present. The app sets `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: same-origin` on every response; Nginx adds HSTS.
+- Bootstrap assets are loaded from the CDN with Subresource Integrity hashes.
 - Audit log at `/var/log/bastion/audit.log` records login attempts, config changes, and user-management actions. Control characters from user input are scrubbed to prevent log injection.
-- Python dependencies are pinned in `web/requirements.txt` for reproducible builds.
+- Python dependencies are pinned in `web/requirements.txt` for reproducible builds, and `pip` is uninstalled from the runtime image after installing them.
 - Docker image builds include SBOM and provenance attestations for supply chain verification.
 
 ### Dependency patching (automated)
