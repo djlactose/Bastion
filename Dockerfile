@@ -60,6 +60,9 @@ python3 -m venv /opt/venv && \
 export PATH="/opt/venv/bin:$PATH" && \
 pip3 install -U pip && \
 pip3 install -r /opt/bastion/web/requirements.txt && \
+# pip is only needed at build time; removing it drops its vendored copies of
+# urllib3/msgpack/setuptools, which Trivy flags and which nothing at runtime uses.
+pip3 uninstall -y pip && \
 mkdir -p /root/bastion && \
 chmod 700 /root/bastion/ && \
 mkdir -p /var/lib/bastion && \

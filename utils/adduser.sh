@@ -5,6 +5,13 @@ else
     user="$1"
 fi
 
+# This runs as root via sudo from www-data; reject anything that isn't a plain
+# Linux username (it is also interpolated into /home and /tmp paths below).
+if ! [[ "$user" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
+    echo "Invalid username '$user'." >&2
+    exit 2
+fi
+
 # Check if user already exists
 if id "$user" >/dev/null 2>&1; then
     echo "User '$user' already exists." >&2
@@ -36,6 +43,11 @@ ln -s /etc/bastion/servers.sh "/home/$user/servers.sh"
 qr="/tmp/ga_qr_${user}.txt"
 rm -f -- "$qr"
 ( umask 177 && set -C && : > "$qr" ) || { echo "Failed to create $qr safely" >&2; exit 1; }
+# The web app (www-data) reads and then deletes this file; hand it over before
+# the secret is written so it is never readable by anyone else.
+if id www-data >/dev/null 2>&1; then
+    chown www-data:www-data "$qr"
+fi
 ga_output=$(sudo -u "$user" google-authenticator -C -t -d -f -r 4 -R 30 -w 4 -Q UTF8)
 printf '%s\n' "$ga_output" > "$qr"
 printf '%s\n' "$ga_output"

@@ -60,7 +60,7 @@ jobs:
       - name: Upload Trivy results to Security tab
         # Runs even when the scan gate fails, so findings are always visible.
         if: ${{ always() }}
-        uses: github/codeql-action/upload-sarif@f58f0d11ebf5dedd870fab2f999275f7602cfa46 # v2.26.0
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
           sarif_file: trivy-results.sarif
           category: trivy-image

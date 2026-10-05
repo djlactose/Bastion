@@ -54,13 +54,29 @@ login_manager.login_view = 'login'
 # Fix #3: CSRF protection
 csrf = CSRFProtect(app)
 
-# ProxyFix for nginx reverse proxy (safe no-op without nginx)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+# run.sh only starts nginx (and binds gunicorn to 127.0.0.1) when TLS certs are
+# present; otherwise gunicorn is exposed directly on 0.0.0.0:8000.
+behind_proxy = os.path.exists('/etc/bastion/certs/fullchain.pem')
+
+# ProxyFix for the nginx reverse proxy. Only trusted when nginx is actually in
+# front: without it, a client could forge X-Forwarded-For to dodge the login
+# rate limit and spoof audit-log IPs. Host/prefix are not trusted because
+# nginx passes client-supplied X-Forwarded-Host/-Prefix through untouched.
+if behind_proxy:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
 # Secure cookie settings
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = os.path.exists('/etc/bastion/certs/fullchain.pem')
+app.config['SESSION_COOKIE_SECURE'] = behind_proxy
+
+@app.after_request
+def set_security_headers(response):
+    # Set here (not in nginx) so they also apply in plain-HTTP mode on :8000.
+    response.headers.setdefault('X-Frame-Options', 'DENY')
+    response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    response.headers.setdefault('Referrer-Policy', 'same-origin')
+    return response
 
 # Rate limiting
 limiter = Limiter(
@@ -140,6 +156,10 @@ def validate_ip_or_hostname(value):
     if not value or len(value) > 253:
         return False
     if '..' in value:
+        return False
+    # servers.sh passes hosts to ssh unquoted; a leading '-' would be parsed
+    # as an option.
+    if value.startswith('-'):
         return False
     return _HOST_CHARS.match(value) is not None
 
@@ -417,7 +437,10 @@ def update():
                 if not validate_ip_or_hostname(ip.strip()):
                     flash(f'Invalid IP/hostname: {ip}', 'danger')
                     return None
-                if sanitize_shell_input(connection_type) is None:
+                # Either a known code or a bare port number. servers.sh word-splits
+                # this value into ssh arguments, so free text could inject options
+                # (e.g. "80 -oProxyCommand=...") that run on every client.
+                if connection_type not in KNOWN_CODES and not validate_port(connection_type):
                     flash(f'Invalid connection type: {connection_type}', 'danger')
                     return None
                 if sanitize_shell_input(entry_name.strip()) is None:
@@ -502,6 +525,8 @@ custom_sel_fg="{custom_colors['custom_sel_fg']}"
     flash('Configuration updated successfully!', 'success')
     return redirect(url_for('index'))
 
+_DUMMY_PASSWORD_HASH = generate_password_hash(os.urandom(16).hex(), method='pbkdf2:sha256')
+
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=["POST"])
 def login():
@@ -513,7 +538,10 @@ def login():
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
 
-        if user and check_password_hash(user.password, password):
+        # Always run a hash check so response timing doesn't reveal whether
+        # the username exists.
+        password_ok = check_password_hash(user.password if user else _DUMMY_PASSWORD_HASH, password)
+        if user and password_ok:
             if user.is_admin:
                 login_user(user)
                 audit_log('LOGIN_SUCCESS', f'username={username}')
@@ -619,6 +647,17 @@ def logout():
 def refresh_session():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=30)
+
+@app.before_request
+def enforce_admin_session():
+    # Only admins may sign in, but a session outlives a later demotion. Without
+    # this, a demoted user could keep using routes that only check
+    # @login_required (e.g. /update, which writes the bash-sourced servers.conf).
+    if current_user.is_authenticated and not current_user.is_admin:
+        audit_log('SESSION_REVOKED_NOT_ADMIN')
+        logout_user()
+        flash('Access denied: Only administrators can sign in.', 'danger')
+        return redirect(url_for('login'))
 
 @app.before_request
 def enforce_forced_password_change():
@@ -946,4 +985,4 @@ def reset_system_password(username):
     return render_template('reset_system_password.html', username=username)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
