@@ -30,23 +30,18 @@ COPY utils/adduser.sh /root/bin/adduser.sh
 COPY utils/deluser.sh /root/bin/deluser.sh
 COPY utils/resetpw.sh /root/bin/resetpw.sh
 COPY utils/rotate-host-keys.sh /root/bin/rotate-host-keys.sh
+COPY utils/sign-host-keys.sh /root/bin/sign-host-keys.sh
+COPY utils/reset2fa.sh /root/bin/reset2fa.sh
+COPY utils/userstate.sh /root/bin/userstate.sh
+COPY utils/userkeys.sh /root/bin/userkeys.sh
+COPY utils/restrictions.sh /root/bin/restrictions.sh
+COPY utils/gen-selfsigned.py /root/bin/gen-selfsigned.py
 COPY servers.sh /root/bin/servers.sh
 COPY config/servers.conf-sample /root/bin/servers.conf-sample
 COPY config/servers.json-sample /root/bin/servers.json-sample
 COPY run.sh /root/bin/run.sh
-COPY web/templates/base.html /opt/bastion/web/templates/base.html
-COPY web/templates/index.html /opt/bastion/web/templates/index.html
-COPY web/templates/users.html /opt/bastion/web/templates/users.html
-COPY web/templates/add_user.html /opt/bastion/web/templates/add_user.html
-COPY web/templates/edit_user.html /opt/bastion/web/templates/edit_user.html
-COPY web/templates/login.html /opt/bastion/web/templates/login.html
-COPY web/templates/register.html /opt/bastion/web/templates/register.html
-COPY web/templates/setup.html /opt/bastion/web/templates/setup.html
-COPY web/templates/change_password.html /opt/bastion/web/templates/change_password.html
-COPY web/templates/system_users.html /opt/bastion/web/templates/system_users.html
-COPY web/templates/add_system_user.html /opt/bastion/web/templates/add_system_user.html
-COPY web/templates/system_user_qr.html /opt/bastion/web/templates/system_user_qr.html
-COPY web/templates/reset_system_password.html /opt/bastion/web/templates/reset_system_password.html
+COPY web/templates/ /opt/bastion/web/templates/
+COPY web/static/ /opt/bastion/web/static/
 COPY web/app.py /opt/bastion/web/app.py
 COPY web/wsgi.py /opt/bastion/web/wsgi.py
 COPY web/migrate.py /opt/bastion/web/migrate.py
@@ -54,12 +49,14 @@ COPY web/requirements.txt /opt/bastion/web/requirements.txt
 
 RUN apt-get update && \
 apt-get upgrade -y && \
-apt-get install -y -o Dpkg::Options::="--force-confold" python3-venv openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd nginx jq && \
+apt-get install -y -o Dpkg::Options::="--force-confold" python3-venv openssh-server openssh-client libpam-google-authenticator sudo qrencode netcat-openbsd nginx jq nftables && \
 apt-get purge -y --auto-remove python3-cryptography && \
 python3 -m venv /opt/venv && \
 export PATH="/opt/venv/bin:$PATH" && \
 pip3 install -U pip && \
-pip3 install -r /opt/bastion/web/requirements.txt && \
+# --require-hashes: every package, transitive dependencies included, must match
+# a SHA-256 pinned in requirements.txt (generated from web/requirements.in).
+pip3 install --require-hashes -r /opt/bastion/web/requirements.txt && \
 # pip is only needed at build time; removing it drops its vendored copies of
 # urllib3/msgpack/setuptools, which Trivy flags and which nothing at runtime uses.
 pip3 uninstall -y pip && \
@@ -67,12 +64,20 @@ mkdir -p /root/bastion && \
 chmod 700 /root/bastion/ && \
 mkdir -p /var/lib/bastion && \
 chown www-data:www-data /var/lib/bastion && \
+chmod 700 /var/lib/bastion && \
 mkdir -p /var/log/bastion && \
 chown www-data:www-data /var/log/bastion && \
+chmod 750 /var/log/bastion && \
 chmod 755 /root/bin/adduser.sh && \
 chmod 755 /root/bin/deluser.sh && \
 chmod 755 /root/bin/resetpw.sh && \
 chmod 755 /root/bin/rotate-host-keys.sh && \
+chmod 755 /root/bin/sign-host-keys.sh && \
+chmod 755 /root/bin/reset2fa.sh && \
+chmod 755 /root/bin/userstate.sh && \
+chmod 755 /root/bin/userkeys.sh && \
+chmod 755 /root/bin/restrictions.sh && \
+chmod 644 /root/bin/gen-selfsigned.py && \
 chmod 755 /root/bin/run.sh && \
 chmod 755 /root/bin/upgrade.sh && \
 chmod 755 /root/bin/BackupUsers.sh && \

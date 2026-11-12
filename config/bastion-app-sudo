@@ -1,3 +1,7 @@
 www-data ALL=(ALL) NOPASSWD: /root/bin/adduser.sh
 www-data ALL=(ALL) NOPASSWD: /root/bin/deluser.sh
 www-data ALL=(ALL) NOPASSWD: /root/bin/resetpw.sh
+www-data ALL=(ALL) NOPASSWD: /root/bin/reset2fa.sh
+www-data ALL=(ALL) NOPASSWD: /root/bin/userstate.sh
+www-data ALL=(ALL) NOPASSWD: /root/bin/userkeys.sh
+www-data ALL=(ALL) NOPASSWD: /root/bin/restrictions.sh

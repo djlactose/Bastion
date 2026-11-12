@@ -48,6 +48,13 @@
                         <label for="confirm_password" class="form-label">Confirm Password</label>
                         <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Confirm Password" autocomplete="new-password" required>
                     </div>
+                    {% if token_required %}
+                    <div class="mb-3">
+                        <label for="setup_token" class="form-label">Setup Token</label>
+                        <input type="password" class="form-control" name="setup_token" id="setup_token" placeholder="Value of SETUP_TOKEN" autocomplete="off" required>
+                        <div class="form-text">The value of the <code>SETUP_TOKEN</code> environment variable this container was started with.</div>
+                    </div>
+                    {% endif %}
                     <div id="error-message" class="text-danger mb-3" style="display: none;">
                         Passwords do not match!
                     </div>

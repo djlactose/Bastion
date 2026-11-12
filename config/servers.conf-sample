@@ -13,6 +13,12 @@ base_port=22
 name=""
 ############################################
 ############################################
+#Verify the bastion's identity when connecting (yes/no). host_ca is this
+#install's SSH CA public key; the container fills it in automatically.
+verify_host="yes"
+host_ca=""
+############################################
+############################################
 #Menu color theme (default, dark, blue, green, red, purple, cyan, amber, custom)
 theme="default"
 #Custom theme colors (used when theme="custom"; black, red, green, yellow, blue, magenta, cyan, white)

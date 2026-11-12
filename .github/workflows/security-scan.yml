@@ -1,5 +1,10 @@
 name: Security scan (Trivy)
 
+# Three independent checks:
+#   - pip-audit over the hash-pinned Python lockfile,
+#   - ShellCheck over the shell scripts,
+#   - a Trivy scan of the built image (described below).
+#
 # Builds the image locally (no push) and scans it with Trivy. On pull requests
 # this is a GATE: a dependency bump that still leaves a *fixable* HIGH/CRITICAL
 # CVE fails the check, mirroring the manual `docker scout cves --only-fixed`
@@ -16,6 +21,52 @@ on:
 permissions: {}
 
 jobs:
+  python-deps:
+    # Audits the hash-pinned lockfile against the PyPI advisory database. This
+    # catches a vulnerable Python package of any severity without needing an
+    # image build, and covers the transitive pins as well as the top-level ones.
+    name: Audit Python dependencies (pip-audit)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Run pip-audit
+        run: |
+          pipx run pip-audit==2.10.1 --require-hashes --disable-pip -r web/requirements.txt
+
+  shellcheck:
+    # The shell scripts run as root in the container (and servers.sh on every
+    # client). Fail on errors; warnings are reported but do not block.
+    name: Lint shell scripts (ShellCheck)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Run ShellCheck
+        run: |
+          shellcheck --version
+          shellcheck --severity=error run.sh servers.sh utils/*.sh
+
   scan:
     name: Build and scan image
     runs-on: ubuntu-latest

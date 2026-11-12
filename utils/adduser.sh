@@ -36,20 +36,17 @@ else
 fi
 ln -s /etc/bastion/servers.conf "/home/$user/servers.conf"
 ln -s /etc/bastion/servers.sh "/home/$user/servers.sh"
-# Capture Google Authenticator QR code output for web UI display.
-# Create the file O_EXCL-style to defeat a pre-existing symlink: rm any prior
-# entry, then noclobber-create with a restrictive umask so chmod races can't
-# redirect root writes to an arbitrary file.
-qr="/tmp/ga_qr_${user}.txt"
-rm -f -- "$qr"
-( umask 177 && set -C && : > "$qr" ) || { echo "Failed to create $qr safely" >&2; exit 1; }
-# The web app (www-data) reads and then deletes this file; hand it over before
-# the secret is written so it is never readable by anyone else.
-if id www-data >/dev/null 2>&1; then
-    chown www-data:www-data "$qr"
-fi
+# Enroll the user in Google Authenticator.
 ga_output=$(sudo -u "$user" google-authenticator -C -t -d -f -r 4 -R 30 -w 4 -Q UTF8)
-printf '%s\n' "$ga_output" > "$qr"
+# Hand the QR code to the web UI through its private one-time directory
+# (mode 700, owned by www-data; the app reads the file once and deletes it).
+# The file is created and written as www-data, so root never writes into a
+# directory the web user controls and no SSH user can read the secret.
+qr_dir=/var/lib/bastion/qr
+if id www-data >/dev/null 2>&1 && [ -d "$qr_dir" ]; then
+    printf '%s\n' "$ga_output" | \
+        su -s /bin/sh www-data -c 'umask 077; rm -f -- "$0"; cat > "$0"' "$qr_dir/ga_qr_${user}.txt"
+fi
 printf '%s\n' "$ga_output"
 echo "$user:$pass" | chpasswd
 /root/bin/BackupUsers.sh

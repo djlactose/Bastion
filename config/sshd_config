@@ -29,7 +29,7 @@ Include /etc/ssh/sshd_config.d/*.conf
 
 # Authentication:
 
-#LoginGraceTime 2m
+LoginGraceTime 30
 #PermitRootLogin prohibit-password
 PermitRootLogin no
 #StrictModes yes
@@ -40,7 +40,7 @@ MaxAuthTries 3
 # default and silently drops connections from any source IP that has
 # accumulated auth failures. On bastion hosts that blocks legitimate users
 # whose workstation shares NAT with a scanner — very common on corporate
-# networks. Bastion is pinned to ubuntu:24.04 (OpenSSH 9.7) precisely to
+# networks. Bastion is pinned to ubuntu:24.04 (OpenSSH 9.6) precisely to
 # avoid this class of surprise. If you ever bump the base to a release
 # shipping OpenSSH >=10, uncomment the line below (older sshd versions
 # reject unknown directives at parse time, so do NOT leave it uncommented
@@ -80,8 +80,8 @@ KbdInteractiveAuthentication yes
 #KerberosGetAFSToken no
 
 # GSSAPI options
-GSSAPIAuthentication yes
-GSSAPICleanupCredentials yes
+GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
 #GSSAPIStrictAcceptorCheck yes
 #GSSAPIKeyExchange no
 
@@ -110,7 +110,7 @@ PermitUserEnvironment no
 #Compression delayed
 ClientAliveInterval 60
 ClientAliveCountMax 3
-UseDNS yes
+UseDNS no
 #PidFile /run/sshd.pid
 #MaxStartups 10:30:100
 #PermitTunnel no

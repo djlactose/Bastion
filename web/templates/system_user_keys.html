@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}SSH Keys - {{ username }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-key me-1"></i>SSH Keys - {{ username }}
+    </div>
+    <div class="card-body">
+        {% if keys %}
+        <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Fingerprint</th>
+                    <th>Comment</th>
+                    <th style="width: 100px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key in keys %}
+                <tr>
+                    {% if key.valid %}
+                    <td>
+                        {{ key.type }}
+                        {% if key.security_key %}<span class="badge bg-primary">Security key</span>{% endif %}
+                    </td>
+                    <td><code>{{ key.fingerprint }}</code></td>
+                    <td>{{ key.comment }}</td>
+                    <td>
+                        <form method="POST" onsubmit="return confirm('Remove this key from \'{{ username }}\'?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="action" value="remove"/>
+                            <input type="hidden" name="fingerprint" value="{{ key.fingerprint }}"/>
+                            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                        </form>
+                    </td>
+                    {% else %}
+                    <td colspan="4" class="text-muted">
+                        <span class="badge bg-warning text-dark">Not managed here</span>
+                        A line with options or an unrecognized format: <code>{{ key.line[:80] }}</code>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="text-muted">This user has no authorized public keys. They sign in with their password and authenticator code.</p>
+        {% endif %}
+
+        <h6 class="mt-4">Add a public key</h6>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="action" value="add"/>
+            <div class="mb-2">
+                <textarea class="form-control font-monospace" name="key" rows="3" placeholder="ssh-ed25519 AAAAC3... user@laptop" aria-label="Public key" required></textarea>
+                <div class="form-text">
+                    Paste the contents of a <code>.pub</code> file. FIDO2 security keys (<code>sk-ssh-ed25519@openssh.com</code>, <code>sk-ecdsa-sha2-nistp256@openssh.com</code>) are supported.
+                    Unless the container was started with <code>SSH_REQUIRE_KEY_AND_2FA</code>, a key lets the user sign in without their password and authenticator code.
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add key</button>
+            <a href="{{ url_for('list_system_users') }}" class="btn btn-secondary">Back</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

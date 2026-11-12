@@ -93,6 +93,77 @@ def rotate_secret_key() -> None:
     )
 
 
+def ensure_secret_key() -> None:
+    """Create the Flask SECRET_KEY on first start.
+
+    Done here, in the single process that runs before gunicorn, so that the
+    workers never race to generate different keys. The file is created
+    exclusively with mode 0600, so it is never readable by other users.
+    """
+    if os.path.exists(SECRET_KEY_PATH):
+        return
+    try:
+        os.makedirs(os.path.dirname(SECRET_KEY_PATH), exist_ok=True)
+        fd = os.open(SECRET_KEY_PATH, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        return
+    except OSError as exc:
+        _log(f'could not create SECRET_KEY: {exc}')
+        return
+    try:
+        os.write(fd, os.urandom(32).hex().encode('ascii'))
+    finally:
+        os.close(fd)
+    _log('generated SECRET_KEY')
+
+
+def _add_user_column(column: str, ddl: str) -> None:
+    """Add a column to the user table of an existing users.db.
+
+    Idempotent: skips when DB/table absent (fresh install — db.create_all() in
+    app.py will create it with the column already in the model) or when the
+    column already exists.
+    """
+    if not os.path.exists(USERS_DB_PATH):
+        return
+    try:
+        con = sqlite3.connect(USERS_DB_PATH)
+        try:
+            cur = con.cursor()
+            cur.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='user'"
+            )
+            if not cur.fetchone():
+                return
+            cur.execute("PRAGMA table_info(user)")
+            cols = {row[1] for row in cur.fetchall()}
+            if column in cols:
+                return
+            cur.execute(f"ALTER TABLE user ADD COLUMN {column} {ddl}")
+            con.commit()
+            _log(f'added User.{column} column')
+        finally:
+            con.close()
+    except Exception as exc:  # noqa: BLE001 — must not block container start
+        _log(f'{column} migration failed: {exc!r}')
+
+
+def add_session_token_column() -> None:
+    """Add User.session_token (server-side session revocation).
+
+    Existing rows get an empty token, which app.py treats as "never rotated":
+    sessions issued before the upgrade stay valid.
+    """
+    _add_user_column('session_token', "VARCHAR(64) NOT NULL DEFAULT ''")
+
+
+def add_totp_columns() -> None:
+    """Add the columns for optional two-factor login of web admins."""
+    _add_user_column('totp_secret', "VARCHAR(64) NOT NULL DEFAULT ''")
+    _add_user_column('totp_recovery', "TEXT NOT NULL DEFAULT ''")
+    _add_user_column('totp_last_step', "INTEGER NOT NULL DEFAULT 0")
+
+
 def add_force_password_change_column() -> None:
     """Add User.force_password_change column to an existing users.db.
 
@@ -133,7 +204,19 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001 — must not block container start
         _log(f'unexpected error: {exc!r}')
     try:
+        ensure_secret_key()
+    except Exception as exc:  # noqa: BLE001 — must not block container start
+        _log(f'unexpected error: {exc!r}')
+    try:
         add_force_password_change_column()
+    except Exception as exc:  # noqa: BLE001 — must not block container start
+        _log(f'unexpected error: {exc!r}')
+    try:
+        add_session_token_column()
+    except Exception as exc:  # noqa: BLE001 — must not block container start
+        _log(f'unexpected error: {exc!r}')
+    try:
+        add_totp_columns()
     except Exception as exc:  # noqa: BLE001 — must not block container start
         _log(f'unexpected error: {exc!r}')
 

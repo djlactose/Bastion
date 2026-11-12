@@ -46,6 +46,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('list_system_users') }}">System Users</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('activity') }}">Activity</a>
+                        </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
@@ -57,7 +60,16 @@
                             <a class="nav-link" href="{{ url_for('change_password') }}" title="Change Password"><i class="bi bi-key"></i></a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('logout') }}">Logout <small class="text-light opacity-75" id="sessionTimer"></small></a>
+                            <a class="nav-link" href="{{ url_for('account_2fa') }}" title="Two-Factor Login"><i class="bi bi-shield-check"></i></a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('account_passkeys') }}" title="Passkeys"><i class="bi bi-fingerprint"></i></a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{{ url_for('logout') }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="nav-link btn btn-link">Logout <small class="text-light opacity-75" id="sessionTimer"></small></button>
+                            </form>
                         </li>
                     {% else %}
                         <li class="nav-item">

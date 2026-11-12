@@ -10,32 +10,73 @@
     </div>
     <div class="card-body">
         {% if users %}
-        <table class="table table-bordered">
+        <div class="table-responsive">
+        <table class="table table-bordered align-middle">
             <thead>
                 <tr>
                     <th>Username</th>
-                    <th>UID</th>
-                    <th>Home Directory</th>
+                    <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in users %}
                 <tr>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.uid }}</td>
-                    <td><code>{{ user.home }}</code></td>
                     <td>
-                        <a href="{{ url_for('reset_system_password', username=user.username) }}" class="btn btn-sm btn-warning">Reset Password</a>
+                        {{ user.username }}
+                        <div class="small text-muted">UID {{ user.uid }} &middot; <code>{{ user.home }}</code></div>
+                    </td>
+                    <td>
+                        {% if user.state == 'disabled' %}
+                        <span class="badge bg-danger">Disabled</span>
+                        {% elif user.state == 'expired' %}
+                        <span class="badge bg-danger">Expired {{ user.state_detail }}</span>
+                        {% elif user.state == 'expires' %}
+                        <span class="badge bg-warning text-dark">Expires {{ user.state_detail }}</span>
+                        {% else %}
+                        <span class="badge bg-success">Active</span>
+                        {% endif %}
+                        {% if user.restricted %}
+                        <span class="badge bg-info text-dark">Limited to {{ user.allowed_count }} machine{{ '' if user.allowed_count == 1 else 's' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('reset_system_password', username=user.username) }}" class="btn btn-sm btn-warning mb-1">Reset Password</a>
+                        <a href="{{ url_for('system_user_keys', username=user.username) }}" class="btn btn-sm btn-outline-primary mb-1">SSH Keys</a>
+                        <a href="{{ url_for('system_user_access', username=user.username) }}" class="btn btn-sm btn-outline-primary mb-1">Allowed Machines</a>
+                        <form action="{{ url_for('reset_system_2fa', username=user.username) }}" method="POST" style="display:inline;" onsubmit="return confirm('Issue a new authenticator secret for \'{{ user.username }}\'? Their current authenticator entry and scratch codes stop working.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary mb-1">Reset Authenticator</button>
+                        </form>
+                        <form action="{{ url_for('set_system_user_state', username=user.username) }}" method="POST" style="display:inline;"{% if user.state not in ('disabled', 'expired') %} onsubmit="return confirm('Disable \'{{ user.username }}\'? They will be signed out and unable to log in until re-enabled.');"{% endif %}>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            {% if user.state in ('disabled', 'expired') %}
+                            <input type="hidden" name="action" value="enable"/>
+                            <button type="submit" class="btn btn-sm btn-outline-success mb-1">Enable</button>
+                            {% else %}
+                            <input type="hidden" name="action" value="disable"/>
+                            <button type="submit" class="btn btn-sm btn-outline-danger mb-1">Disable</button>
+                            {% endif %}
+                        </form>
                         <form action="{{ url_for('delete_system_user', username=user.username) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete system user \'{{ user.username }}\'? This will remove their home directory and cannot be undone.');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            <button type="submit" class="btn btn-sm btn-danger mb-1">Delete</button>
+                        </form>
+                        <form action="{{ url_for('set_system_user_state', username=user.username) }}" method="POST" class="d-flex gap-1 mt-1" style="max-width: 320px;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="action" value="expire"/>
+                            <input type="date" class="form-control form-control-sm" name="date" aria-label="Expiry date for {{ user.username }}" {% if user.state == 'expires' %}value="{{ user.state_detail }}"{% endif %} required>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Set expiry</button>
+                            {% if user.state == 'expires' %}
+                            <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap" name="action" value="enable" formnovalidate>Clear</button>
+                            {% endif %}
                         </form>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        </div>
         {% else %}
         <p class="text-muted mb-0">No system users found. Click "Add System User" to create one.</p>
         {% endif %}

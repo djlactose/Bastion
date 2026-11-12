@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Passkeys{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-fingerprint me-1"></i>Passkeys for {{ current_user.username }}
+    </div>
+    <div class="card-body">
+        <p class="text-muted">
+            A passkey lets you sign in with your device's fingerprint, face or PIN, or with a hardware security key, instead of typing your password. Your password keeps working as a fallback.
+        </p>
+        <div class="alert alert-info">
+            A passkey only works on the address it was registered on.
+            {% if rp_id %}
+            You are on <strong>{{ rp_id }}</strong>, so a passkey registered now signs you in here. If you also reach this page another way (for example through the SSH tunnel on <code>localhost</code> and directly over HTTPS), register one for each.
+            {% else %}
+            Passkeys are not available on this address: browsers only allow them over HTTPS or on <code>localhost</code> (the SSH tunnel).
+            {% endif %}
+        </div>
+
+        {% if passkeys %}
+        <table class="table table-bordered align-middle">
+            <thead><tr><th>Name</th><th>Works on</th><th>Added</th><th style="width: 100px;">Action</th></tr></thead>
+            <tbody>
+                {% for p in passkeys %}
+                <tr>
+                    <td>{{ p.label }}</td>
+                    <td><code>{{ p.rp_id }}</code>{% if p.rp_id == rp_id %} <span class="badge bg-success">this address</span>{% endif %}</td>
+                    <td>{{ p.created }}</td>
+                    <td>
+                        <form action="{{ url_for('passkey_delete', id=p.id) }}" method="POST" onsubmit="return confirm('Remove this passkey?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>You have no passkeys yet.</p>
+        {% endif %}
+
+        {% if rp_id %}
+        <form id="passkeyRegister" class="d-flex flex-wrap gap-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div>
+                <label for="passkeyLabel" class="form-label">Name for this passkey</label>
+                <input type="text" class="form-control" id="passkeyLabel" maxlength="64" placeholder="e.g. Work laptop" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add a passkey</button>
+        </form>
+        <div id="passkeyError" class="text-danger mt-2 d-none" role="alert"></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='passkey.js') }}"></script>
+{% endblock %}

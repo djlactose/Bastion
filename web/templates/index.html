@@ -33,6 +33,21 @@
                 <input type="text" class="form-control" name="name" id="name" value="{{ name }}" placeholder="Display name for this bastion" required>
             </div>
 
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" name="verify_host" id="verify_host" {% if verify_host %}checked{% endif %} {% if not host_ca_available %}disabled{% endif %}>
+                    <label class="form-check-label" for="verify_host">Verify bastion host identity</label>
+                </div>
+                <div class="form-text">
+                    When on, the servers.sh client checks that it is talking to this bastion (using the bastion's own SSH certificate authority) instead of accepting any host key. Users are not prompted.
+                    {% if not host_ca_available %}
+                    <span class="text-danger">Unavailable: this bastion has no SSH host CA yet. Restart the container to generate one.</span>
+                    {% elif not verify_host %}
+                    <strong>Recommended.</strong> If several bastion containers are reached under one name, first copy <code>/root/bastion/ssh_host_ca</code> and <code>ssh_host_ca.pub</code> to every container's <code>/root/bastion</code> volume and restart them.
+                    {% endif %}
+                </div>
+            </div>
+
             <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#themeCollapse" aria-expanded="false">
                     <span>
@@ -160,6 +175,21 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Backup and Restore</div>
+    <div class="card-body">
+        <p class="text-muted small">Download the saved configuration as a file, or replace it with a previously downloaded one (for example to copy a setup to another bastion). An imported file is checked by the same rules as the form above.</p>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a href="{{ url_for('export_config') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download me-1"></i>Export</a>
+            <form action="{{ url_for('import_config') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center" onsubmit="return confirm('Replace the live configuration for all users with this file?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="file" class="form-control form-control-sm" name="config_file" accept="application/json,.json" aria-label="Configuration file to import" required>
+                <button type="submit" class="btn btn-outline-secondary btn-sm text-nowrap"><i class="bi bi-upload me-1"></i>Import</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -389,6 +419,9 @@
         preview += 'base_port=' + basePort + '\n';
         preview += '############################################\n';
         preview += 'name="' + name + '"\n';
+        preview += '############################################\n';
+        preview += 'verify_host="' + (document.getElementById('verify_host').checked ? 'yes' : 'no') + '"\n';
+        preview += 'host_ca="(this bastion\'s SSH CA public key)"\n';
         preview += '############################################\n';
         var themeRadio = form.querySelector('input[name="theme"]:checked');
         preview += '#Menu color theme (default, dark, blue, green, red, purple, cyan, amber, custom)\n';

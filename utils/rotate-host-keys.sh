@@ -10,12 +10,15 @@
 #      /root/bastion/keys-rotated-<timestamp>/ (persistent volume).
 #   2. Generates new RSA-4096, ECDSA-P521, and Ed25519 keys.
 #   3. Copies the new keys back to /root/bastion/ for upgrade persistence.
-#   4. Sends SIGHUP to the main sshd so new connections see the new keys.
+#   4. Signs the new keys with the install's SSH CA (sign-host-keys.sh).
+#   5. Sends SIGHUP to the main sshd so new connections see the new keys.
 #      Existing SSH sessions are unaffected.
 #
-# Client impact: anyone whose known_hosts pins the current fingerprint will
+# Client impact: anyone whose own known_hosts pins the current fingerprint will
 # see a mismatch warning and must re-accept. Clients launched via the bundled
-# servers.sh (which uses StrictHostKeyChecking=no) are unaffected.
+# servers.sh are unaffected: with host verification enabled they trust the
+# install's SSH CA (which signs the new keys, step 4), and without it they do
+# not check the host key at all.
 set -euo pipefail
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -29,8 +32,7 @@ This will rotate the bastion's SSH host keys.
 
 After rotation, SSH clients that have the current host fingerprint in
 ~/.ssh/known_hosts will refuse to connect until the new fingerprint is
-accepted. Clients connecting through the bundled servers.sh (which disables
-strict host-key checking) are unaffected.
+accepted. Clients connecting through the bundled servers.sh are unaffected.
 
 EOM
     read -rp "Continue with rotation? [y/N] " reply
@@ -79,6 +81,9 @@ for k in "${KEYS[@]}"; do
     cp -p "$k"     /root/bastion/
     cp -p "$k.pub" /root/bastion/
 done
+
+echo "Signing the new host keys with the install's SSH CA"
+/root/bin/sign-host-keys.sh || echo "  WARNING: signing failed; keys will be served without certificates"
 
 echo "Reloading sshd (SIGHUP, existing sessions preserved)"
 if pgrep -f 'sshd.*-D' >/dev/null; then

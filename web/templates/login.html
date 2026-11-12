@@ -46,8 +46,17 @@
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Login</button>
                 </form>
+                <hr>
+                <button type="button" class="btn btn-outline-secondary w-100" id="passkeyLogin">
+                    <i class="bi bi-fingerprint me-1"></i>Sign in with a passkey
+                </button>
+                <div id="passkeyError" class="text-danger mt-2 d-none" role="alert"></div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='passkey.js') }}"></script>
 {% endblock %}

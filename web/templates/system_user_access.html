@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Allowed Machines - {{ username }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-shield-lock me-1"></i>Allowed Machines - {{ username }}
+    </div>
+    <div class="card-body">
+        {% if not firewall_active %}
+        <div class="alert alert-warning">
+            <strong>Shell sessions are not confined on this container.</strong>
+            A restriction here limits SSH port forwarding (everything the <code>servers.sh</code> menu does), but a user who opens a shell on the bastion can still connect onward from it.
+            To enforce the list for shell sessions too, start the container with <code>--cap-add=NET_ADMIN</code>.
+        </div>
+        {% endif %}
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="mode" id="mode_unrestricted" value="unrestricted" {% if not restricted %}checked{% endif %}>
+                <label class="form-check-label" for="mode_unrestricted">Unrestricted: can reach any machine through the bastion</label>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="radio" name="mode" id="mode_restricted" value="restricted" {% if restricted %}checked{% endif %}>
+                <label class="form-check-label" for="mode_restricted">Limited to the machines ticked below</label>
+            </div>
+
+            {% for group in groups %}
+            <h6 class="mt-3">{{ group.title }}</h6>
+            {% for machine in group.machines %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="machine" id="machine_{{ loop.index }}_{{ group.title|replace(' ', '_') }}" value="{{ machine.key }}" {% if machine.key in allowed %}checked{% endif %}>
+                <label class="form-check-label" for="machine_{{ loop.index }}_{{ group.title|replace(' ', '_') }}">
+                    {{ machine.name }} <span class="text-muted small">{{ machine.targets }}</span>
+                </label>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="text-muted">No machines are configured yet. Add them on the configuration page first.</p>
+            {% endfor %}
+
+            <div class="form-text mt-3">
+                A limited user can connect only to the addresses and ports shown, whether through the menu, their own port forwards or a shell on the bastion. They can still sign in to the bastion itself.
+                The ticks are ignored while "Unrestricted" is selected. Saving a change ends the user's open sessions.
+                If a machine's address or connection type is changed on the configuration page, tick it again here.
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a href="{{ url_for('list_system_users') }}" class="btn btn-secondary">Back</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

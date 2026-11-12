@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Two-Factor Login{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div style="width: 100%; max-width: 420px;">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-shield-check me-1"></i>Two-Factor Login
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Code</label>
+                        <input type="text" class="form-control" name="code" id="code" inputmode="numeric" autocomplete="one-time-code" autofocus required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Verify</button>
+                </form>
+                <a href="{{ url_for('login') }}" class="d-block text-center mt-3">Start over</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

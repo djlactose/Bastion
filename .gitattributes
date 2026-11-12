@@ -5,3 +5,12 @@
 *.py text eol=lf
 *.conf text eol=lf
 Dockerfile text eol=lf
+
+# Everything under config/ is copied into the Linux image (sshd, PAM, sudoers,
+# nginx and the bash-sourced sample config), so it must never be checked out
+# with CRLF line endings on Windows.
+config/** text eol=lf
+
+# Installed by pip inside the Linux image; a CR would corrupt the hash lines.
+web/requirements.txt text eol=lf
+web/requirements.in text eol=lf

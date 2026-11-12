@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Two-Factor Login{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-shield-check me-1"></i>Two-Factor Login for {{ current_user.username }}
+    </div>
+    <div class="card-body">
+        {% if recovery_codes %}
+        <div class="alert alert-success">Two-factor login is now on for your account.</div>
+        <div class="alert alert-warning">
+            <strong>Save these recovery codes now.</strong> They are shown only once. Each one signs you in a single time if you lose your authenticator.
+        </div>
+        <pre class="bg-light border rounded p-3">{% for c in recovery_codes %}{{ c }}
+{% endfor %}</pre>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Done</a>
+
+        {% elif enabled %}
+        <p><span class="badge bg-success">On</span> Signing in to this account requires a code from your authenticator app.</p>
+        <p class="text-muted">Unused recovery codes: {{ recovery_remaining }}</p>
+        <hr>
+        <form method="POST" onsubmit="return confirm('Turn off two-factor login for your account?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="action" value="disable"/>
+            <div class="mb-3">
+                <label for="current_password" class="form-label">Current password</label>
+                <input type="password" class="form-control" name="current_password" id="current_password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-outline-danger">Turn off two-factor login</button>
+        </form>
+
+        {% else %}
+        <p><span class="badge bg-secondary">Off</span> Add a second step to your sign-in: a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, and similar).</p>
+        <ol>
+            <li>Scan this QR code with your authenticator app, or enter the key by hand.</li>
+            <li>Enter the 6-digit code the app shows to confirm.</li>
+        </ol>
+        {% if qr %}
+        <div class="mb-3"><img src="{{ qr }}" alt="QR code for your authenticator app" width="220" height="220" class="border rounded bg-white p-1"></div>
+        {% endif %}
+        <p>Key: <code>{{ secret }}</code></p>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="action" value="enable"/>
+            <div class="mb-3" style="max-width: 240px;">
+                <label for="code" class="form-label">6-digit code</label>
+                <input type="text" class="form-control" name="code" id="code" inputmode="numeric" autocomplete="one-time-code" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Turn on two-factor login</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

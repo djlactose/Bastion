@@ -2,6 +2,7 @@
     "bastion": [""],
     "base_port": 22,
     "name": "",
+    "verify_host": true,
     "theme": "default",
     "custom_screen": "black",
     "custom_bg": "black",
