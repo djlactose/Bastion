@@ -155,7 +155,10 @@ cd /
 
 # Common Gunicorn options. --umask 0o077 keeps everything the web app creates
 # (database, logs, its listening socket) private to www-data.
-GUNICORN_OPTS="--umask 0o077 --error-logfile /var/log/bastion/gunicorn-error.log --access-logfile /var/log/bastion/gunicorn-access.log"
+# --no-control-socket: Gunicorn 25.1+ otherwise opens a runtime-management
+# socket (worker scaling, reload, shutdown) under the web user's home. Nothing
+# here uses it, so keep it off and the listeners exactly as before.
+GUNICORN_OPTS="--umask 0o077 --no-control-socket --error-logfile /var/log/bastion/gunicorn-error.log --access-logfile /var/log/bastion/gunicorn-access.log"
 
 # Address for the plain-HTTP listener on port 8000 when no TLS certificates
 # are installed. Defaults to loopback: the web admin is then reached through
